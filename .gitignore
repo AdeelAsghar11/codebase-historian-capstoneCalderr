@@ -48,6 +48,7 @@ historian.db
 # Vector store / Local state
 .chroma/
 chroma_db/
+.codebase_graph.json
 
 # IDE / Editor settings
 .vscode/

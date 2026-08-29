@@ -84,6 +84,15 @@ Entry template:
 **Decisions made:** None (aligned with ADR 0001, ADR 0006, and ARCHITECTURE.md).
 **Next:** Phase 1 milestone 6 (`ROADMAP.md`) — CLI (Typer + Rich) and minimal REST API (FastAPI).
 
+---
+
+### 2026-08-29 — CLI (Typer + Rich) and minimal REST API (FastAPI) implemented
+**Built:** Implemented `HistorianService` in `src/codebase_historian/service.py` unifying orchestrator, knowledge graph, hybrid index, and SQLite memory store. Built FastAPI application in `src/codebase_historian/api/` exposing `/v1` endpoints (`/health`, `/explain`, `/impact`, `/refactor/suggest`, `/onboarding/guide`, `/ingest`). Built interactive Typer + Rich CLI in `src/codebase_historian/cli/` with commands (`ingest`, `explain`, `impact`, `refactor` with CLI human approval confirmation gate, `onboard`, `health`) and added `historian` entrypoint to `pyproject.toml`. Verified with integration tests (33/33 total test suite passing).
+**Files touched:** `pyproject.toml`, `src/codebase_historian/service.py`, `src/codebase_historian/api/__init__.py`, `src/codebase_historian/api/app.py`, `src/codebase_historian/api/routers.py`, `src/codebase_historian/cli/__init__.py`, `src/codebase_historian/cli/main.py`, `tests/integration/test_api_and_cli.py`, `docs/ROADMAP.md`, `docs/PROGRESS.md`.
+**Decisions made:** None (aligned with ADR 0004 and TECH_STACK.md).
+**Next:** Phase 1 milestone 7 (`ROADMAP.md`) — Containerized build (Dockerfile + docker-compose for local dev) and faithfulness evaluation set.
+
+
 
 
 

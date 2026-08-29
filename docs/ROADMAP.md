@@ -15,8 +15,8 @@ Outcome: a complete, demoable, evaluated system on its own.
 - [x] Refactor Proposer ↔ Critic adversarial debate loop
 - [x] Mandatory human review gate before any refactor suggestion is considered approved (CLI-level confirmation is acceptable for Phase 1)
 - [x] Structured, schema-validated output (Pydantic) on every agent response
-- [ ] CLI (Typer + Rich)
-- [ ] Minimal REST API (FastAPI) exposing the same capabilities as the CLI
+- [x] CLI (Typer + Rich)
+- [x] Minimal REST API (FastAPI) exposing the same capabilities as the CLI
 - [ ] Containerized build (Dockerfile + docker-compose for local dev)
 - [ ] Faithfulness evaluation set (see `TESTING.md`) run against the reference repository
 
