@@ -60,6 +60,15 @@ Entry template:
 **Decisions made:** None (aligned with ADR 0002 and DATA_MODEL.md).
 **Next:** Phase 1 milestone 3 (`ROADMAP.md`) — Hybrid retrieval index (ChromaDB + embeddings) over commit messages, PRs, and docstrings.
 
+---
+
+### 2026-08-29 — Hybrid retrieval index (ChromaDB + embeddings) implemented
+**Built:** Implemented `HybridRetrievalIndex` and `LexicalMatcher` in `src/codebase_historian/retrieval/`. Fuses ChromaDB vector embeddings with BM25 lexical keyword matching (with exact phrase bonus) over commit messages, pull requests, and AST docstrings. Supports filtering by document type and subject prefix, and persists to `.chroma/` with in-memory fallback. Verified with 5 dedicated unit tests (18/18 total test suite passing).
+**Files touched:** `src/codebase_historian/retrieval/__init__.py`, `src/codebase_historian/retrieval/models.py`, `src/codebase_historian/retrieval/hybrid_index.py`, `tests/unit/test_retrieval.py`, `docs/ROADMAP.md`, `docs/PROGRESS.md`.
+**Decisions made:** None (aligned with ADR 0003 and TECH_STACK.md).
+**Next:** Phase 1 milestone 4 (`ROADMAP.md`) — Reconciled memory store (SQLite) with add / update / delete / no-op logic.
+
+
 
 
 
