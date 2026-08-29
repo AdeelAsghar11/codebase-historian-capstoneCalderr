@@ -108,6 +108,15 @@ Entry template:
 **Decisions made:** None (aligned with ARCHITECTURE.md, API.md, and DATA_MODEL.md).
 **Next:** Phase 2 milestone 4 (`ROADMAP.md`) — MCP server (FastMCP) exposing explain / trace-impact / suggest-refactor / onboarding as tools.
 
+---
+
+### 2026-08-29 — FastMCP server and live client integration test implemented
+**Built:** Implemented official Model Context Protocol server in `src/codebase_historian/mcp_server/` exposing four tools (`explain_code`, `trace_impact`, `suggest_refactor`, `onboarding_guide`) matching `API.md`. Enforced non-negotiable safety property in `suggest_refactor` (strictly `pending_human_review`). Added automatic structured audit logging into SQLite for every MCP tool invocation with latency and caller ID. Added `historian mcp` CLI command supporting stdio transport. Verified with live client integration tests (39/39 total test suite passing).
+**Files touched:** `src/codebase_historian/mcp_server/__init__.py`, `src/codebase_historian/mcp_server/server.py`, `src/codebase_historian/cli/main.py`, `tests/integration/test_mcp_server.py`, `docs/ROADMAP.md`, `docs/PROGRESS.md`.
+**Decisions made:** None (aligned with TECH_STACK.md, API.md, and ARCHITECTURE.md).
+**Next:** Phase 2 milestone 6 (`ROADMAP.md`) — Incremental re-indexing via webhook and CI pipeline (GitHub Actions).
+
+
 
 
 

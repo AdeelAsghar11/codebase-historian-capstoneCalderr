@@ -162,5 +162,16 @@ def health():
     console.print(table)
 
 
+@app.command(name="mcp")
+def run_mcp(
+    transport: str = typer.Option("stdio", "--transport", "-t", help="Transport mode ('stdio' or 'sse')"),
+):
+    """Start FastMCP server exposing tools for Claude Desktop, Cursor, and MCP clients."""
+    from codebase_historian.mcp_server.server import run_stdio
+
+    rprint(f"[bold cyan]Starting Codebase Historian MCP Server ({transport})...[/]")
+    run_stdio()
+
+
 if __name__ == "__main__":
     app()
