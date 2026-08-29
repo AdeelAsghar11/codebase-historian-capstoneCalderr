@@ -38,7 +38,7 @@ Outcome: the version that demonstrates range, not just completeness.
 
 - [x] Impact / Risk agent + historical backtest evaluation
 - [x] Onboarding agent (centrality-ranked reading order + traced architectural decisions)
-- [ ] Interactive graph-visualization dashboard (Streamlit)
+- [x] Interactive graph-visualization dashboard (Streamlit)
 - [ ] Validation against a second, external repository never seen during development
 - [ ] Recorded end-to-end demonstration
 

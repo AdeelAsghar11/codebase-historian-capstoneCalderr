@@ -132,6 +132,15 @@ Entry template:
 **Decisions made:** None (aligned with TESTING.md, PRD.md, and ROADMAP.md).
 **Next:** Phase 3 milestone 3 (`ROADMAP.md`) — Interactive graph-visualization dashboard (Streamlit).
 
+---
+
+### 2026-08-30 — Interactive graph-visualization dashboard (Streamlit) implemented
+**Built:** Created complete Streamlit interactive dashboard in `src/codebase_historian/dashboard/app.py` with vis.js network physics visualization (`graph_view.py`), live health metrics, Historian query playground with verified citation cards, Blast Radius predictor with evidence tags, Refactor Proposer ↔ Critic debate with interactive human approval/rejection buttons, Contributor Onboarding guide, and SQLite structured audit log viewer. Added `historian dashboard` CLI command. All 46 tests passing across unit, integration, and evaluation suites.
+**Files touched:** `pyproject.toml`, `src/codebase_historian/dashboard/__init__.py`, `src/codebase_historian/dashboard/graph_view.py`, `src/codebase_historian/dashboard/app.py`, `src/codebase_historian/cli/main.py`, `tests/integration/test_dashboard.py`, `docs/ROADMAP.md`, `docs/PROGRESS.md`.
+**Decisions made:** None (aligned with ARCHITECTURE.md, TECH_STACK.md, and CONVENTIONS.md).
+**Next:** Phase 3 milestone 4 (`ROADMAP.md`) — Validation against a second, external repository never seen during development.
+
+
 
 
 

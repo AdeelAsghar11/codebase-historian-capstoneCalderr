@@ -3,6 +3,8 @@ Typer and Rich CLI for Codebase Historian.
 """
 
 
+from pathlib import Path
+
 import typer
 from rich import print as rprint
 from rich.console import Console
@@ -171,6 +173,30 @@ def run_mcp(
 
     rprint(f"[bold cyan]Starting Codebase Historian MCP Server ({transport})...[/]")
     run_stdio()
+
+
+@app.command(name="dashboard")
+def run_dashboard(
+    port: int = typer.Option(8501, "--port", "-p", help="Port to run Streamlit dashboard on"),
+):
+    """Launch the interactive Streamlit graph-visualization dashboard."""
+    import subprocess
+    import sys
+
+    dashboard_path = Path(__file__).parent.parent / "dashboard" / "app.py"
+    rprint(f"[bold green]Launching Streamlit Dashboard on port {port}...[/]")
+    subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "streamlit",
+            "run",
+            str(dashboard_path),
+            "--server.port",
+            str(port),
+        ],
+        check=False,
+    )
 
 
 if __name__ == "__main__":
