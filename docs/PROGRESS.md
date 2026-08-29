@@ -44,5 +44,14 @@ Entry template:
 **Decisions made:** None.
 **Next:** Begin Phase 1 implementation (`ROADMAP.md`) — build the ingestion pipeline for git history and AST parsing.
 
+---
+
+### 2026-08-29 — Ingestion pipeline and dependencies installed
+**Built:** Configured `pyproject.toml` and installed all project dependencies using `uv`. Implemented the Phase 1 ingestion pipeline: `GitExtractor` (commits, diff statistics, file modifications, and co-change frequency computation), `ASTParser` (class, function, method, docstring extraction, and static import `DEPENDS_ON` dependency resolution), and `IngestionPipeline` orchestrator. All unit tests verified and passing (5/5).
+**Files touched:** `pyproject.toml`, `uv.lock`, `src/codebase_historian/__init__.py`, `src/codebase_historian/ingestion/__init__.py`, `src/codebase_historian/ingestion/models.py`, `src/codebase_historian/ingestion/git_extractor.py`, `src/codebase_historian/ingestion/ast_parser.py`, `src/codebase_historian/ingestion/pipeline.py`, `tests/unit/test_ingestion.py`, `docs/ROADMAP.md`, `docs/PROGRESS.md`.
+**Decisions made:** None (followed locked decisions in `TECH_STACK.md` and `DATA_MODEL.md`).
+**Next:** Phase 1 milestone 2 (`ROADMAP.md`) — Knowledge graph construction (NetworkX) populating nodes (`File`, `Commit`, `PullRequest`, `Issue`, `Author`) and edges (`MODIFIES`, `AUTHORED_BY`, `CO_CHANGES_WITH`, `DEPENDS_ON`).
+
+
 
 

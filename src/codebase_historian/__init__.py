@@ -1,4 +1,4 @@
-""
+"""
 Codebase Historian package.
 """
 

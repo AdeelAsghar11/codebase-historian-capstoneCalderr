@@ -1,0 +1,45 @@
+[project]
+name = "codebase-historian"
+version = "0.1.0"
+description = "Multi-agent GraphRAG platform for codebase understanding and reasoning"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "gitpython>=3.1.40",
+    "pygithub>=2.1.1",
+    "networkx>=3.2.1",
+    "chromadb>=0.4.22",
+    "sentence-transformers>=2.2.2",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "fastapi>=0.109.0",
+    "uvicorn>=0.27.0",
+    "typer>=0.9.0",
+    "rich>=13.7.0",
+    "langchain>=0.1.0",
+    "langgraph>=0.0.26",
+    "langchain-core>=0.1.20",
+    "langchain-groq>=0.1.0",
+    "mcp>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "ruff>=0.2.0",
+]
+dashboard = [
+    "streamlit>=1.31.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/codebase_historian"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
