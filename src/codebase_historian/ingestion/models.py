@@ -4,7 +4,7 @@ Represents raw extracted entities from git history, AST parsing, and issue/PR so
 """
 
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+
 from pydantic import BaseModel, Field
 
 
@@ -18,7 +18,7 @@ class FileModificationRecord(BaseModel):
     change_type: str  # 'A' (added), 'M' (modified), 'D' (deleted), 'R' (renamed)
     lines_added: int = 0
     lines_removed: int = 0
-    diff_summary: Optional[str] = None
+    diff_summary: str | None = None
 
 
 class CommitRecord(BaseModel):
@@ -26,8 +26,8 @@ class CommitRecord(BaseModel):
     author: AuthorRecord
     timestamp: datetime
     message: str
-    parent_shas: List[str] = Field(default_factory=list)
-    modifications: List[FileModificationRecord] = Field(default_factory=list)
+    parent_shas: list[str] = Field(default_factory=list)
+    modifications: list[FileModificationRecord] = Field(default_factory=list)
 
 
 class CoChangeRecord(BaseModel):
@@ -40,7 +40,7 @@ class CoChangeRecord(BaseModel):
 class ASTFunctionRecord(BaseModel):
     name: str
     qualname: str
-    docstring: Optional[str] = None
+    docstring: str | None = None
     start_line: int
     end_line: int
     is_async: bool = False
@@ -49,17 +49,17 @@ class ASTFunctionRecord(BaseModel):
 class ASTClassRecord(BaseModel):
     name: str
     qualname: str
-    docstring: Optional[str] = None
+    docstring: str | None = None
     start_line: int
     end_line: int
-    methods: List[ASTFunctionRecord] = Field(default_factory=list)
-    base_classes: List[str] = Field(default_factory=list)
+    methods: list[ASTFunctionRecord] = Field(default_factory=list)
+    base_classes: list[str] = Field(default_factory=list)
 
 
 class ASTImportRecord(BaseModel):
-    module: Optional[str] = None  # from module import ... or import module
-    names: List[str] = Field(default_factory=list)
-    alias_map: Dict[str, str] = Field(default_factory=dict)
+    module: str | None = None  # from module import ... or import module
+    names: list[str] = Field(default_factory=list)
+    alias_map: dict[str, str] = Field(default_factory=dict)
     import_kind: str = "direct"  # "direct", "from", "relative"
     level: int = 0  # 0 for absolute, 1 for '.', 2 for '..', etc.
 
@@ -67,8 +67,8 @@ class ASTImportRecord(BaseModel):
 class FileStructureRecord(BaseModel):
     path: str
     language: str = "python"
-    classes: List[ASTClassRecord] = Field(default_factory=list)
-    functions: List[ASTFunctionRecord] = Field(default_factory=list)
-    imports: List[ASTImportRecord] = Field(default_factory=list)
-    docstring: Optional[str] = None
-    raw_content: Optional[str] = None
+    classes: list[ASTClassRecord] = Field(default_factory=list)
+    functions: list[ASTFunctionRecord] = Field(default_factory=list)
+    imports: list[ASTImportRecord] = Field(default_factory=list)
+    docstring: str | None = None
+    raw_content: str | None = None

@@ -3,7 +3,8 @@ Unit tests for the Agent Team, Supervisor routing, Refactor Proposer <-> Critic 
 mandatory human approval gate, and LangGraph state graph execution.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 import pytest
 
 from codebase_historian.agents import (
@@ -19,12 +20,11 @@ from codebase_historian.agents import (
 from codebase_historian.agents.schemas import CriticVerdict
 from codebase_historian.agents.state import AgentState
 from codebase_historian.graph.builder import KnowledgeGraphBuilder
-from codebase_historian.graph.graph import CodebaseKnowledgeGraph
 from codebase_historian.ingestion.models import (
     AuthorRecord,
+    CoChangeRecord,
     CommitRecord,
     FileModificationRecord,
-    CoChangeRecord,
     FileStructureRecord,
 )
 from codebase_historian.ingestion.pipeline import IngestionResult
@@ -39,7 +39,7 @@ def populated_components():
     c1 = CommitRecord(
         sha="commit_sha_123",
         author=author,
-        timestamp=datetime(2026, 1, 15, 10, 0, tzinfo=timezone.utc),
+        timestamp=datetime(2026, 1, 15, 10, 0, tzinfo=UTC),
         message="feat: core authentication service",
         modifications=[
             FileModificationRecord(path="src/auth.py", change_type="A", lines_added=80)
@@ -48,7 +48,7 @@ def populated_components():
     c2 = CommitRecord(
         sha="commit_sha_456",
         author=author,
-        timestamp=datetime(2026, 1, 20, 15, 0, tzinfo=timezone.utc),
+        timestamp=datetime(2026, 1, 20, 15, 0, tzinfo=UTC),
         message="feat: user service depending on auth",
         modifications=[
             FileModificationRecord(path="src/user.py", change_type="A", lines_added=60),

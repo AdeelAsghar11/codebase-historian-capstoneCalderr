@@ -3,8 +3,9 @@ Integration tests for FastAPI REST API and Typer CLI.
 """
 
 from pathlib import Path
-from fastapi.testclient import TestClient
+
 import pytest
+from fastapi.testclient import TestClient
 from typer.testing import CliRunner
 
 from codebase_historian.api import app, set_service

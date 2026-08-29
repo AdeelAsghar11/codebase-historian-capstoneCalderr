@@ -3,8 +3,9 @@ Reconciliation engine for memory entries.
 Implements the add / update / delete / no-op state machine specified in DATA_MODEL.md.
 """
 
-from datetime import datetime, timezone
-from typing import Callable, Dict, List, Optional, Set
+from collections.abc import Callable
+from datetime import UTC, datetime
+
 from pydantic import BaseModel, Field
 
 from codebase_historian.ingestion.models import CommitRecord
@@ -22,7 +23,7 @@ class ReconciliationResult(BaseModel):
     updated: int = 0
     deleted: int = 0
     no_oped: int = 0
-    entries: List[MemoryEntry] = Field(default_factory=list)
+    entries: list[MemoryEntry] = Field(default_factory=list)
 
 
 class MemoryReconciler:
@@ -33,10 +34,10 @@ class MemoryReconciler:
 
     def reconcile(
         self,
-        new_commits: List[CommitRecord],
-        existing_repo_files: Set[str],
-        explanation_updater: Optional[Callable[[MemoryEntry, CommitRecord], Optional[str]]] = None,
-        new_explanations: Optional[List[Dict[str, str]]] = None,
+        new_commits: list[CommitRecord],
+        existing_repo_files: set[str],
+        explanation_updater: Callable[[MemoryEntry, CommitRecord], str | None] | None = None,
+        new_explanations: list[dict[str, str]] | None = None,
     ) -> ReconciliationResult:
         """
         Execute a reconciliation pass on all memory entries.
@@ -48,11 +49,11 @@ class MemoryReconciler:
         - ADD:    New subject explanation supplied.
         """
         result = ReconciliationResult()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # 1. Map changes from new commits
-        touched_files: Dict[str, CommitRecord] = {}
-        deleted_files: Set[str] = set()
+        touched_files: dict[str, CommitRecord] = {}
+        deleted_files: set[str] = set()
 
         for commit in new_commits:
             for mod in commit.modifications:

@@ -3,7 +3,7 @@ Onboarding agent.
 Generates starting guides, centrality-ranked reading orders, and traced architectural decisions.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from codebase_historian.agents.schemas import OnboardingResponse
 from codebase_historian.agents.state import AgentState
@@ -13,7 +13,7 @@ from codebase_historian.graph.graph import CodebaseKnowledgeGraph
 class OnboardingAgent:
     """Generates contributor onboarding guides using graph centrality and history."""
 
-    def __init__(self, knowledge_graph: Optional[CodebaseKnowledgeGraph] = None):
+    def __init__(self, knowledge_graph: CodebaseKnowledgeGraph | None = None):
         self.kg = knowledge_graph
 
     def generate_guide(self) -> OnboardingResponse:
@@ -51,7 +51,7 @@ class OnboardingAgent:
             key_decisions=key_decisions[:5],
         )
 
-    def __call__(self, state: AgentState) -> Dict[str, Any]:
+    def __call__(self, state: AgentState) -> dict[str, Any]:
         """LangGraph node execution for Onboarding agent."""
         response = self.generate_guide()
         return {

@@ -5,7 +5,6 @@ Extracts structure, docstrings, classes, functions, and import dependencies from
 
 import ast
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
 
 from codebase_historian.ingestion.models import (
     ASTClassRecord,
@@ -31,9 +30,9 @@ class ASTParser:
             )
 
         module_doc = ast.get_docstring(tree)
-        functions: List[ASTFunctionRecord] = []
-        classes: List[ASTClassRecord] = []
-        imports: List[ASTImportRecord] = []
+        functions: list[ASTFunctionRecord] = []
+        classes: list[ASTClassRecord] = []
+        imports: list[ASTImportRecord] = []
 
         for node in tree.body:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -79,7 +78,7 @@ class ASTParser:
         )
 
     @staticmethod
-    def parse_file(file_path: str | Path) -> Optional[FileStructureRecord]:
+    def parse_file(file_path: str | Path) -> FileStructureRecord | None:
         """Read and parse a Python file from disk."""
         path = Path(file_path)
         if not path.is_file() or path.suffix != ".py":
@@ -119,14 +118,14 @@ class ASTParser:
         start_line = getattr(node, "lineno", 1)
         end_line = getattr(node, "end_lineno", start_line)
 
-        base_classes: List[str] = []
+        base_classes: list[str] = []
         for base in node.bases:
             if isinstance(base, ast.Name):
                 base_classes.append(base.id)
             elif isinstance(base, ast.Attribute):
                 base_classes.append(f"{ast.unparse(base)}")
 
-        methods: List[ASTFunctionRecord] = []
+        methods: list[ASTFunctionRecord] = []
         for item in node.body:
             if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 methods.append(ASTParser._extract_function(item, parent_qualname=qualname))
@@ -143,23 +142,21 @@ class ASTParser:
 
     @staticmethod
     def resolve_dependencies(
-        records: List[FileStructureRecord],
-        repo_root: Optional[str | Path] = None,
-    ) -> List[Tuple[str, str, str]]:
+        records: list[FileStructureRecord],
+        repo_root: str | Path | None = None,
+    ) -> list[tuple[str, str, str]]:
         """
         Resolve import statements across parsed file structures to discover File -> File DEPENDS_ON relations.
         Returns a list of tuples: (source_file, target_file, import_kind).
         """
         # Create lookup mapping of module names to file paths
-        module_to_file: Dict[str, str] = {}
+        module_to_file: dict[str, str] = {}
         for rec in records:
             norm_path = rec.path.replace("\\", "/")
             # Handle typical python layouts: src/pkg/foo.py or pkg/foo.py
             clean = norm_path
-            if clean.startswith("src/"):
-                clean = clean[4:]
-            if clean.endswith(".py"):
-                clean = clean[:-3]
+            clean = clean.removeprefix("src/")
+            clean = clean.removesuffix(".py")
             mod_key = clean.replace("/", ".")
             module_to_file[mod_key] = norm_path
             # Also register package __init__
@@ -167,7 +164,7 @@ class ASTParser:
                 pkg_key = mod_key[:-9]
                 module_to_file[pkg_key] = norm_path
 
-        dependencies: List[Tuple[str, str, str]] = []
+        dependencies: list[tuple[str, str, str]] = []
         for rec in records:
             source_path = rec.path.replace("\\", "/")
             for imp in rec.imports:

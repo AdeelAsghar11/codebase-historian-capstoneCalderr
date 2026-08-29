@@ -4,19 +4,17 @@ Assembles Supervisor router, specialist agents (Historian, Impact, Onboarding),
 and the adversarial Refactor Proposer <-> Critic debate loop under a mandatory human gate.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from langgraph.graph import END, START, StateGraph
 
 from codebase_historian.agents.historian import HistorianAgent
 from codebase_historian.agents.impact import ImpactAgent
 from codebase_historian.agents.onboarding import OnboardingAgent
-from codebase_historian.agents.refactor import CriticAgent, RefactorProposerAgent, human_review_gate
-from codebase_historian.agents.schemas import (
-    ExplainResponse,
-    ImpactResponse,
-    OnboardingResponse,
-    RefactorResponse,
+from codebase_historian.agents.refactor import (
+    CriticAgent,
+    RefactorProposerAgent,
+    human_review_gate,
 )
 from codebase_historian.agents.state import AgentState
 from codebase_historian.agents.supervisor import SupervisorAgent
@@ -54,10 +52,10 @@ class HistorianOrchestrator:
 
     def __init__(
         self,
-        knowledge_graph: Optional[CodebaseKnowledgeGraph] = None,
-        retrieval_index: Optional[HybridRetrievalIndex] = None,
-        memory_store: Optional[SQLiteMemoryStore] = None,
-        llm: Optional[Any] = None,
+        knowledge_graph: CodebaseKnowledgeGraph | None = None,
+        retrieval_index: HybridRetrievalIndex | None = None,
+        memory_store: SQLiteMemoryStore | None = None,
+        llm: Any | None = None,
     ):
         self.kg = knowledge_graph
         self.index = retrieval_index
@@ -129,8 +127,8 @@ class HistorianOrchestrator:
     def run(
         self,
         query: str,
-        target: Optional[str] = None,
-        repo_url: Optional[str] = None,
+        target: str | None = None,
+        repo_url: str | None = None,
     ) -> AgentState:
         """Execute the workflow for a given query."""
         initial_state: AgentState = {

@@ -2,10 +2,9 @@
 SQLite persistent storage for reconciled memory, audit logs, and index state.
 """
 
-from datetime import datetime, timezone
-from pathlib import Path
 import sqlite3
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
+from pathlib import Path
 from uuid import uuid4
 
 from codebase_historian.memory.models import (
@@ -79,10 +78,10 @@ class SQLiteMemoryStore:
         subject: str,
         claim_text: str,
         source_commit_sha: str,
-        entry_id: Optional[str] = None,
+        entry_id: str | None = None,
     ) -> MemoryEntry:
         """Create and store a new active memory entry."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         eid = entry_id or str(uuid4())
         entry = MemoryEntry(
             id=eid,
@@ -114,7 +113,7 @@ class SQLiteMemoryStore:
         self.conn.commit()
         return entry
 
-    def get_entry(self, entry_id: str) -> Optional[MemoryEntry]:
+    def get_entry(self, entry_id: str) -> MemoryEntry | None:
         """Fetch a memory entry by ID."""
         cursor = self.conn.cursor()
         cursor.execute("SELECT * FROM memory_entries WHERE id = ?", (entry_id,))
@@ -122,8 +121,8 @@ class SQLiteMemoryStore:
         return self._row_to_entry(row) if row else None
 
     def get_by_subject(
-        self, subject: str, status: Optional[MemoryStatus] = None
-    ) -> List[MemoryEntry]:
+        self, subject: str, status: MemoryStatus | None = None
+    ) -> list[MemoryEntry]:
         """Fetch all entries matching a subject."""
         cursor = self.conn.cursor()
         if status:
@@ -138,8 +137,8 @@ class SQLiteMemoryStore:
         return [self._row_to_entry(row) for row in cursor.fetchall()]
 
     def list_entries(
-        self, status: Optional[MemoryStatus] = None
-    ) -> List[MemoryEntry]:
+        self, status: MemoryStatus | None = None
+    ) -> list[MemoryEntry]:
         """List all entries, optionally filtered by status."""
         cursor = self.conn.cursor()
         if status:
@@ -154,12 +153,12 @@ class SQLiteMemoryStore:
     def update_entry(
         self,
         entry_id: str,
-        claim_text: Optional[str] = None,
-        source_commit_sha: Optional[str] = None,
-        status: Optional[MemoryStatus] = None,
-        last_action: Optional[ReconciliationAction] = None,
-        last_validated_at: Optional[datetime] = None,
-    ) -> Optional[MemoryEntry]:
+        claim_text: str | None = None,
+        source_commit_sha: str | None = None,
+        status: MemoryStatus | None = None,
+        last_action: ReconciliationAction | None = None,
+        last_validated_at: datetime | None = None,
+    ) -> MemoryEntry | None:
         """Update an existing memory entry."""
         current = self.get_entry(entry_id)
         if not current:
@@ -173,7 +172,7 @@ class SQLiteMemoryStore:
         )
         new_status = status if status is not None else current.status
         new_action = last_action if last_action is not None else current.last_action
-        new_val_time = last_validated_at or datetime.now(timezone.utc)
+        new_val_time = last_validated_at or datetime.now(UTC)
 
         cursor = self.conn.cursor()
         cursor.execute(
@@ -196,7 +195,7 @@ class SQLiteMemoryStore:
 
     # --- Index State Operations ---
 
-    def get_index_state(self, repo_url: str) -> Optional[IndexState]:
+    def get_index_state(self, repo_url: str) -> IndexState | None:
         """Retrieve repository indexing state."""
         cursor = self.conn.cursor()
         cursor.execute("SELECT * FROM index_state WHERE repo_url = ?", (repo_url,))
@@ -211,7 +210,7 @@ class SQLiteMemoryStore:
 
     def set_index_state(self, repo_url: str, last_commit_sha: str) -> IndexState:
         """Update or insert repository indexing state."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         cursor = self.conn.cursor()
         cursor.execute(
             """
@@ -241,7 +240,7 @@ class SQLiteMemoryStore:
         status_code: int,
     ) -> int:
         """Record an API/tool call into the audit log."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         cursor = self.conn.cursor()
         cursor.execute(
             """
@@ -260,7 +259,7 @@ class SQLiteMemoryStore:
         self.conn.commit()
         return cursor.lastrowid
 
-    def list_audit_logs(self, limit: int = 100) -> List[AuditLogEntry]:
+    def list_audit_logs(self, limit: int = 100) -> list[AuditLogEntry]:
         """Fetch audit log entries."""
         cursor = self.conn.cursor()
         cursor.execute(

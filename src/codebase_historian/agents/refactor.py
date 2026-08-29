@@ -2,7 +2,7 @@
 Refactor Proposer and Critic adversarial agents, plus mandatory Human Approval Gate.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from codebase_historian.agents.schemas import CriticVerdict, RefactorResponse
 from codebase_historian.agents.state import AgentState
@@ -12,10 +12,10 @@ from codebase_historian.graph.graph import CodebaseKnowledgeGraph
 class RefactorProposerAgent:
     """Proposes concrete refactorings grounded in history and dependency structure."""
 
-    def __init__(self, knowledge_graph: Optional[CodebaseKnowledgeGraph] = None):
+    def __init__(self, knowledge_graph: CodebaseKnowledgeGraph | None = None):
         self.kg = knowledge_graph
 
-    def propose(self, target: str, critic_feedback: Optional[str] = None) -> str:
+    def propose(self, target: str, critic_feedback: str | None = None) -> str:
         """Draft a refactoring proposal tailored to the target file and any prior critique."""
         clean_target = target.replace("\\", "/")
 
@@ -41,7 +41,7 @@ class RefactorProposerAgent:
             f"- Ensure backward compatibility with existing consumers."
         )
 
-    def __call__(self, state: AgentState) -> Dict[str, Any]:
+    def __call__(self, state: AgentState) -> dict[str, Any]:
         """LangGraph node execution for Proposer."""
         target = state.get("target") or "src/core.py"
         prior_verdict = state.get("critic_verdict")
@@ -60,7 +60,7 @@ class RefactorProposerAgent:
 class CriticAgent:
     """Adversarial critic instructed to scrutinize and refute flawed proposals."""
 
-    def __init__(self, knowledge_graph: Optional[CodebaseKnowledgeGraph] = None):
+    def __init__(self, knowledge_graph: CodebaseKnowledgeGraph | None = None):
         self.kg = knowledge_graph
 
     def critique(self, proposal: str, target: str, debate_iterations: int = 1) -> CriticVerdict:
@@ -87,7 +87,7 @@ class CriticAgent:
             notes="Proposal passes adversarial scrutiny.",
         )
 
-    def __call__(self, state: AgentState) -> Dict[str, Any]:
+    def __call__(self, state: AgentState) -> dict[str, Any]:
         """LangGraph node execution for Critic."""
         proposal = state.get("refactor_proposal", "")
         target = state.get("target") or "src/core.py"
@@ -100,7 +100,7 @@ class CriticAgent:
         }
 
 
-def human_review_gate(state: AgentState) -> Dict[str, Any]:
+def human_review_gate(state: AgentState) -> dict[str, Any]:
     """
     Mandatory human review gate.
     Enforces that NO proposal can be marked approved by agents or code paths.

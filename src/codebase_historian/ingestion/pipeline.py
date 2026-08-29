@@ -4,26 +4,26 @@ Coordinates git history extraction, co-change computation, and AST parsing acros
 """
 
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+
 from pydantic import BaseModel, Field
 
+from codebase_historian.ingestion.ast_parser import ASTParser
+from codebase_historian.ingestion.git_extractor import GitExtractor
 from codebase_historian.ingestion.models import (
-    CommitRecord,
     CoChangeRecord,
+    CommitRecord,
     FileStructureRecord,
 )
-from codebase_historian.ingestion.git_extractor import GitExtractor
-from codebase_historian.ingestion.ast_parser import ASTParser
 
 
 class IngestionResult(BaseModel):
     repo_path: str
-    last_indexed_commit_sha: Optional[str] = None
-    commits: List[CommitRecord] = Field(default_factory=list)
-    co_changes: List[CoChangeRecord] = Field(default_factory=list)
-    file_structures: List[FileStructureRecord] = Field(default_factory=list)
-    dependencies: List[Tuple[str, str, str]] = Field(default_factory=list)  # (source, target, kind)
-    stats: Dict[str, int] = Field(default_factory=dict)
+    last_indexed_commit_sha: str | None = None
+    commits: list[CommitRecord] = Field(default_factory=list)
+    co_changes: list[CoChangeRecord] = Field(default_factory=list)
+    file_structures: list[FileStructureRecord] = Field(default_factory=list)
+    dependencies: list[tuple[str, str, str]] = Field(default_factory=list)  # (source, target, kind)
+    stats: dict[str, int] = Field(default_factory=dict)
 
 
 class IngestionPipeline:
@@ -36,9 +36,9 @@ class IngestionPipeline:
 
     def run(
         self,
-        branch: Optional[str] = None,
-        max_commits: Optional[int] = None,
-        since_sha: Optional[str] = None,
+        branch: str | None = None,
+        max_commits: int | None = None,
+        since_sha: str | None = None,
     ) -> IngestionResult:
         """Execute full or incremental ingestion on the repository."""
         # 1. Extract git commits and modifications
@@ -52,7 +52,7 @@ class IngestionPipeline:
         co_changes = self.git_extractor.compute_co_changes(commits)
 
         # 3. Parse AST for all Python files in the repository
-        file_structures: List[FileStructureRecord] = []
+        file_structures: list[FileStructureRecord] = []
         for py_file in self.repo_path.rglob("*.py"):
             # Skip virtual environments and hidden dirs
             rel_path = py_file.relative_to(self.repo_path).as_posix()

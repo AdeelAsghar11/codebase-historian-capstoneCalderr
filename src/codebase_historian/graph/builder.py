@@ -3,20 +3,7 @@ Knowledge graph builder.
 Populates NetworkX MultiDiGraph from ingestion pipeline results and PR/issue data.
 """
 
-from typing import Dict, List, Optional
-import networkx as nx
 
-from codebase_historian.ingestion.models import CommitRecord, CoChangeRecord, FileStructureRecord
-from codebase_historian.ingestion.pipeline import IngestionResult
-from codebase_historian.graph.models import (
-    EdgeType,
-    NodeType,
-    AuthorNodeData,
-    CommitNodeData,
-    FileNodeData,
-    PullRequestNodeData,
-    IssueNodeData,
-)
 from codebase_historian.graph.graph import (
     CodebaseKnowledgeGraph,
     author_node_id,
@@ -25,12 +12,24 @@ from codebase_historian.graph.graph import (
     issue_node_id,
     pr_node_id,
 )
+from codebase_historian.graph.models import (
+    EdgeType,
+    IssueNodeData,
+    NodeType,
+    PullRequestNodeData,
+)
+from codebase_historian.ingestion.models import (
+    CoChangeRecord,
+    CommitRecord,
+    FileStructureRecord,
+)
+from codebase_historian.ingestion.pipeline import IngestionResult
 
 
 class KnowledgeGraphBuilder:
     """Constructs and populates a CodebaseKnowledgeGraph."""
 
-    def __init__(self, existing_graph: Optional[CodebaseKnowledgeGraph] = None):
+    def __init__(self, existing_graph: CodebaseKnowledgeGraph | None = None):
         self.kg = existing_graph or CodebaseKnowledgeGraph()
 
     def build_from_ingestion(self, result: IngestionResult) -> CodebaseKnowledgeGraph:
@@ -50,7 +49,7 @@ class KnowledgeGraphBuilder:
 
         return self.kg
 
-    def add_commits(self, commits: List[CommitRecord]) -> None:
+    def add_commits(self, commits: list[CommitRecord]) -> None:
         """Add commits, authors, and file modification edges."""
         for commit in commits:
             c_id = commit_node_id(commit.sha)
@@ -114,7 +113,7 @@ class KnowledgeGraphBuilder:
                     diff_summary=mod.diff_summary or "",
                 )
 
-    def add_co_changes(self, co_changes: List[CoChangeRecord]) -> None:
+    def add_co_changes(self, co_changes: list[CoChangeRecord]) -> None:
         """Add bidirectional CO_CHANGES_WITH edges between files."""
         for cc in co_changes:
             f1_id = file_node_id(cc.file_a)
@@ -142,7 +141,7 @@ class KnowledgeGraphBuilder:
             self.kg.g.add_edge(f1_id, f2_id, **edge_attrs)
             self.kg.g.add_edge(f2_id, f1_id, **edge_attrs)
 
-    def add_file_structures(self, structures: List[FileStructureRecord]) -> None:
+    def add_file_structures(self, structures: list[FileStructureRecord]) -> None:
         """Ensure File nodes exist for all parsed source files and attach metadata."""
         for s in structures:
             f_id = file_node_id(s.path)
@@ -163,7 +162,7 @@ class KnowledgeGraphBuilder:
             if s.docstring:
                 self.kg.g.nodes[f_id]["docstring"] = s.docstring
 
-    def add_dependencies(self, dependencies: List[tuple[str, str, str]]) -> None:
+    def add_dependencies(self, dependencies: list[tuple[str, str, str]]) -> None:
         """Add DEPENDS_ON edges from AST analysis: source_file -> target_file."""
         for source, target, kind in dependencies:
             s_id = file_node_id(source)
@@ -189,8 +188,8 @@ class KnowledgeGraphBuilder:
     def add_pull_request(
         self,
         pr_data: PullRequestNodeData,
-        commit_shas: List[str] = None,
-        referenced_issue_numbers: List[int] = None,
+        commit_shas: list[str] = None,
+        referenced_issue_numbers: list[int] = None,
     ) -> None:
         """Add PullRequest node and its INCLUDES and REFERENCES edges."""
         p_id = pr_node_id(pr_data.number)

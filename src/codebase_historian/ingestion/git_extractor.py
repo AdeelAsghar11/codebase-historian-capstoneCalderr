@@ -4,17 +4,16 @@ Extracts commits, author metadata, file modifications, diff statistics, and co-c
 """
 
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
 import git
 
 from codebase_historian.ingestion.models import (
     AuthorRecord,
+    CoChangeRecord,
     CommitRecord,
     FileModificationRecord,
-    CoChangeRecord,
 )
 
 
@@ -27,10 +26,10 @@ class GitExtractor:
 
     def extract_commits(
         self,
-        branch: Optional[str] = None,
-        max_count: Optional[int] = None,
-        since_sha: Optional[str] = None,
-    ) -> List[CommitRecord]:
+        branch: str | None = None,
+        max_count: int | None = None,
+        since_sha: str | None = None,
+    ) -> list[CommitRecord]:
         """
         Extract commit records from the repository.
         If `since_sha` is provided, only commits after `since_sha` are extracted.
@@ -48,13 +47,13 @@ class GitExtractor:
         # Process commits in topological order (oldest to newest for incremental consistency)
         commits_iterable.reverse()
 
-        records: List[CommitRecord] = []
+        records: list[CommitRecord] = []
         for commit in commits_iterable:
             author_record = AuthorRecord(
                 id=commit.author.email or commit.author.name or "unknown",
                 display_name=commit.author.name or "Unknown",
             )
-            timestamp = datetime.fromtimestamp(commit.authored_date, tz=timezone.utc)
+            timestamp = datetime.fromtimestamp(commit.authored_date, tz=UTC)
             parent_shas = [p.hexsha for p in commit.parents]
 
             modifications = self._extract_modifications(commit)
@@ -71,9 +70,9 @@ class GitExtractor:
             )
         return records
 
-    def _extract_modifications(self, commit: git.Commit) -> List[FileModificationRecord]:
+    def _extract_modifications(self, commit: git.Commit) -> list[FileModificationRecord]:
         """Extract file-level changes and diff stats for a given commit."""
-        modifications: List[FileModificationRecord] = []
+        modifications: list[FileModificationRecord] = []
 
         try:
             stats = commit.stats.files
@@ -112,7 +111,7 @@ class GitExtractor:
                         continue
                     clean_path = path.replace("\\", "/")
                     file_stat = stats.get(path, stats.get(clean_path, {"insertions": 0, "deletions": 0}))
-                    
+
                     summary_parts = []
                     if diff.renamed_file:
                         summary_parts.append(f"Renamed from {diff.a_path} to {diff.b_path}")
@@ -141,13 +140,13 @@ class GitExtractor:
 
         return modifications
 
-    def compute_co_changes(self, commits: List[CommitRecord]) -> List[CoChangeRecord]:
+    def compute_co_changes(self, commits: list[CommitRecord]) -> list[CoChangeRecord]:
         """
         Compute co-change frequencies across all commits.
         Pairs are sorted alphabetically (file_a < file_b) for a canonical key.
         """
-        pair_counts: Dict[Tuple[str, str], int] = defaultdict(int)
-        last_commit: Dict[Tuple[str, str], str] = {}
+        pair_counts: dict[tuple[str, str], int] = defaultdict(int)
+        last_commit: dict[tuple[str, str], str] = {}
 
         for commit in commits:
             # Only consider modified or added files (ignore deletions in co-change coupling)
@@ -167,7 +166,7 @@ class GitExtractor:
                     pair_counts[pair] += 1
                     last_commit[pair] = commit.sha
 
-        co_change_records: List[CoChangeRecord] = []
+        co_change_records: list[CoChangeRecord] = []
         for (file_a, file_b), count in pair_counts.items():
             co_change_records.append(
                 CoChangeRecord(

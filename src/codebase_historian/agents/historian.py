@@ -3,7 +3,7 @@ Historian agent.
 Explains why a file, function, or pattern exists, citing commits, PRs, and discussions.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from codebase_historian.agents.schemas import Citation, ExplainResponse
 from codebase_historian.agents.state import AgentState
@@ -17,10 +17,10 @@ class HistorianAgent:
 
     def __init__(
         self,
-        knowledge_graph: Optional[CodebaseKnowledgeGraph] = None,
-        retrieval_index: Optional[HybridRetrievalIndex] = None,
-        memory_store: Optional[SQLiteMemoryStore] = None,
-        llm: Optional[Any] = None,
+        knowledge_graph: CodebaseKnowledgeGraph | None = None,
+        retrieval_index: HybridRetrievalIndex | None = None,
+        memory_store: SQLiteMemoryStore | None = None,
+        llm: Any | None = None,
     ):
         self.kg = knowledge_graph
         self.index = retrieval_index
@@ -30,7 +30,7 @@ class HistorianAgent:
     def explain(self, target: str, query: str = "") -> ExplainResponse:
         """Generate evidence-grounded explanation with verifiable citations."""
         clean_target = target.replace("\\", "/").strip()
-        citations: List[Citation] = []
+        citations: list[Citation] = []
 
         # 1. Check reconciled memory for existing active explanation
         if self.memory:
@@ -51,7 +51,7 @@ class HistorianAgent:
                 )
 
         # 2. Query Knowledge Graph for file commit history
-        history: List[Dict[str, Any]] = []
+        history: list[dict[str, Any]] = []
         if self.kg:
             history = self.kg.get_file_history(clean_target)
 
@@ -124,7 +124,7 @@ class HistorianAgent:
             confidence=0.88,
         )
 
-    def __call__(self, state: AgentState) -> Dict[str, Any]:
+    def __call__(self, state: AgentState) -> dict[str, Any]:
         """LangGraph node execution for Historian."""
         target = state.get("target") or "repository"
         query = state.get("query", "")

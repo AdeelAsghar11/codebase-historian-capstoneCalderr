@@ -4,7 +4,8 @@ Predicts blast radius for proposed changes based on co-change patterns and AST d
 """
 
 import re
-from typing import Any, Dict, List, Optional
+from pathlib import Path
+from typing import Any
 
 from codebase_historian.agents.schemas import ImpactResponse
 from codebase_historian.agents.state import AgentState
@@ -14,10 +15,10 @@ from codebase_historian.graph.graph import CodebaseKnowledgeGraph
 class ImpactAgent:
     """Predicts blast radius and risk for proposed code changes."""
 
-    def __init__(self, knowledge_graph: Optional[CodebaseKnowledgeGraph] = None):
+    def __init__(self, knowledge_graph: CodebaseKnowledgeGraph | None = None):
         self.kg = knowledge_graph
 
-    def predict_impact(self, change_description: str, target: Optional[str] = None) -> ImpactResponse:
+    def predict_impact(self, change_description: str, target: str | None = None) -> ImpactResponse:
         """Analyze change description and return predicted affected files with evidence."""
         targets = set()
         if target:
@@ -59,7 +60,7 @@ class ImpactAgent:
             evidence=primary_evidence,
         )
 
-    def __call__(self, state: AgentState) -> Dict[str, Any]:
+    def __call__(self, state: AgentState) -> dict[str, Any]:
         """LangGraph node execution for Impact agent."""
         desc = state.get("query", "")
         target = state.get("target")

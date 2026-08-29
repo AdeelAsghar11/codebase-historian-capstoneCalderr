@@ -2,8 +2,7 @@
 FastAPI route handlers for /v1 endpoints.
 """
 
-from typing import Any, Dict, Optional
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from codebase_historian.agents.schemas import (
@@ -21,7 +20,7 @@ from codebase_historian.service import HistorianService
 router = APIRouter(prefix="/v1")
 
 # Global or dependency-injected service instance
-_service: Optional[HistorianService] = None
+_service: HistorianService | None = None
 
 
 def get_service() -> HistorianService:
@@ -37,12 +36,12 @@ def set_service(service: HistorianService) -> None:
 
 
 class IngestRequest(BaseModel):
-    repo_path: Optional[str] = None
+    repo_path: str | None = None
 
 
 class HealthResponse(BaseModel):
     status: str
-    last_indexed_commit: Optional[str] = None
+    last_indexed_commit: str | None = None
     graph_node_count: int
     graph_edge_count: int
     indexed_documents_count: int

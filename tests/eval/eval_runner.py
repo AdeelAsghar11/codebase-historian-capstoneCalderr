@@ -6,7 +6,7 @@ Target: Faithfulness >= 80% per PRD.md.
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import git
 
@@ -17,13 +17,13 @@ def run_faithfulness_eval(
     service: HistorianService,
     eval_set_path: str | Path,
     repo_path: str | Path = ".",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Run faithfulness evaluation against a curated ground-truth question set.
     Validates whether citations reference real commits and match historical keywords.
     """
     path = Path(eval_set_path)
-    cases: List[Dict[str, Any]] = json.loads(path.read_text(encoding="utf-8"))
+    cases: list[dict[str, Any]] = json.loads(path.read_text(encoding="utf-8"))
 
     repo = git.Repo(Path(repo_path).resolve())
     # Retrieve all valid commit SHAs from repo

@@ -2,7 +2,8 @@
 State definition for the LangGraph agent workflow.
 """
 
-from typing import Any, Dict, List, Optional, TypedDict
+from typing import Any, TypedDict
+
 from codebase_historian.agents.schemas import (
     CriticVerdict,
     ExplainResponse,
@@ -15,26 +16,26 @@ from codebase_historian.agents.schemas import (
 class AgentState(TypedDict, total=False):
     # Input query & targeting
     query: str
-    target: Optional[str]
-    repo_url: Optional[str]
+    target: str | None
+    repo_url: str | None
 
     # Routing decision
-    route: Optional[str]  # "historian", "impact", "refactor", "onboarding"
+    route: str | None  # "historian", "impact", "refactor", "onboarding"
 
     # Retrieved context (from KnowledgeGraph, HybridIndex, or Memory)
-    context: Dict[str, Any]
+    context: dict[str, Any]
 
     # Agent outputs
-    explain_response: Optional[ExplainResponse]
-    impact_response: Optional[ImpactResponse]
-    onboarding_response: Optional[OnboardingResponse]
+    explain_response: ExplainResponse | None
+    impact_response: ImpactResponse | None
+    onboarding_response: OnboardingResponse | None
 
     # Refactor debate loop state
-    refactor_proposal: Optional[str]
-    critic_verdict: Optional[CriticVerdict]
-    refactor_response: Optional[RefactorResponse]
+    refactor_proposal: str | None
+    critic_verdict: CriticVerdict | None
+    refactor_response: RefactorResponse | None
     debate_iterations: int
 
     # Overall execution status
     status: str
-    error: Optional[str]
+    error: str | None

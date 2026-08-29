@@ -2,8 +2,8 @@
 Unit tests for the SQLiteMemoryStore and MemoryReconciler (add / update / delete / no-op).
 """
 
-from datetime import datetime, timezone
-from pathlib import Path
+from datetime import UTC, datetime
+
 import pytest
 
 from codebase_historian.ingestion.models import (
@@ -15,8 +15,8 @@ from codebase_historian.memory.models import (
     MemoryStatus,
     ReconciliationAction,
 )
-from codebase_historian.memory.store import SQLiteMemoryStore
 from codebase_historian.memory.reconciler import MemoryReconciler
+from codebase_historian.memory.store import SQLiteMemoryStore
 
 
 @pytest.fixture
@@ -115,7 +115,7 @@ def test_reconciliation_noop(memory_store):
     unrelated_commit = CommitRecord(
         sha="sha_new",
         author=author,
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         message="update auth",
         modifications=[FileModificationRecord(path="src/auth.py", change_type="M")],
     )
@@ -151,7 +151,7 @@ def test_reconciliation_update_with_and_without_callback(memory_store):
     mod_commit = CommitRecord(
         sha="sha_new_touch",
         author=author,
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         message="feat: modify service_a and service_b",
         modifications=[
             FileModificationRecord(path="src/service_a.py", change_type="M"),
@@ -199,7 +199,7 @@ def test_reconciliation_delete(memory_store):
     del_commit = CommitRecord(
         sha="sha_del",
         author=author,
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         message="refactor: delete deprecated helper",
         modifications=[FileModificationRecord(path="src/deprecated.py", change_type="D")],
     )
@@ -244,7 +244,7 @@ def test_reconciliation_mixed_all_four_actions(memory_store):
     new_commit = CommitRecord(
         sha="sha_mixed_batch",
         author=author,
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         message="chore: refactor API and drop legacy handler",
         modifications=[
             FileModificationRecord(path="src/api.py", change_type="M"),

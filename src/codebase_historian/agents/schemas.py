@@ -3,15 +3,15 @@ Schema-validated request and response models for all agents.
 Follows naming conventions in CONVENTIONS.md (Request / Response suffixes).
 """
 
-from typing import Any, Dict, List, Literal, Optional
-from pydantic import BaseModel, Field
+from typing import Literal
 
+from pydantic import BaseModel, Field
 
 # --- Shared Sub-models ---
 
 class Citation(BaseModel):
-    commit_sha: Optional[str] = None
-    pr_number: Optional[int] = None
+    commit_sha: str | None = None
+    pr_number: int | None = None
     excerpt: str
 
 
@@ -23,27 +23,27 @@ class CriticVerdict(BaseModel):
 # --- Historian Agent Schemas ---
 
 class ExplainRequest(BaseModel):
-    repo_url: Optional[str] = None
+    repo_url: str | None = None
     target: str = Field(..., description="File path or symbol qualname to explain")
 
 
 class ExplainResponse(BaseModel):
     answer: str
-    citations: List[Citation] = Field(default_factory=list)
+    citations: list[Citation] = Field(default_factory=list)
     confidence: float = Field(default=0.85, ge=0.0, le=1.0)
 
 
 # --- Impact / Risk Agent Schemas ---
 
 class ImpactRequest(BaseModel):
-    repo_url: Optional[str] = None
+    repo_url: str | None = None
     change_description: str = Field(
         ..., description="Diff or plain-language description of proposed change"
     )
 
 
 class ImpactResponse(BaseModel):
-    affected_files: List[str] = Field(default_factory=list)
+    affected_files: list[str] = Field(default_factory=list)
     confidence: float = Field(default=0.75, ge=0.0, le=1.0)
     evidence: Literal["co-change", "dependency", "both"] = "both"
 
@@ -51,7 +51,7 @@ class ImpactResponse(BaseModel):
 # --- Refactor Proposer ↔ Critic Schemas ---
 
 class RefactorRequest(BaseModel):
-    repo_url: Optional[str] = None
+    repo_url: str | None = None
     target: str = Field(..., description="File path or symbol to propose refactor for")
 
 
@@ -64,10 +64,10 @@ class RefactorResponse(BaseModel):
 # --- Onboarding Agent Schemas ---
 
 class OnboardingRequest(BaseModel):
-    repo_url: Optional[str] = None
+    repo_url: str | None = None
 
 
 class OnboardingResponse(BaseModel):
-    reading_order: List[str] = Field(default_factory=list)
-    central_files: List[str] = Field(default_factory=list)
-    key_decisions: List[str] = Field(default_factory=list)
+    reading_order: list[str] = Field(default_factory=list)
+    central_files: list[str] = Field(default_factory=list)
+    key_decisions: list[str] = Field(default_factory=list)

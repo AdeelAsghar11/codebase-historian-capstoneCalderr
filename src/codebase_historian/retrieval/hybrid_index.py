@@ -6,7 +6,7 @@ Indexes commit messages, pull request discussions, and AST docstrings.
 import math
 import re
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any
 
 import chromadb
 from chromadb.api import ClientAPI
@@ -14,10 +14,14 @@ from chromadb.api import ClientAPI
 from codebase_historian.graph.models import PullRequestNodeData
 from codebase_historian.ingestion.models import CommitRecord, FileStructureRecord
 from codebase_historian.ingestion.pipeline import IngestionResult
-from codebase_historian.retrieval.models import DocumentType, IndexedDocument, SearchResult
+from codebase_historian.retrieval.models import (
+    DocumentType,
+    IndexedDocument,
+    SearchResult,
+)
 
 
-def tokenize(text: str) -> List[str]:
+def tokenize(text: str) -> list[str]:
     """Tokenize text into lowercase alphanumeric words."""
     return re.findall(r"\b\w+\b", text.lower())
 
@@ -28,13 +32,13 @@ class LexicalMatcher:
     def __init__(self, k1: float = 1.5, b: float = 0.75):
         self.k1 = k1
         self.b = b
-        self.doc_tokens: Dict[str, List[str]] = {}
-        self.doc_lengths: Dict[str, int] = {}
+        self.doc_tokens: dict[str, list[str]] = {}
+        self.doc_lengths: dict[str, int] = {}
         self.avg_doc_len: float = 0.0
-        self.df: Dict[str, int] = {}
+        self.df: dict[str, int] = {}
         self.num_docs: int = 0
 
-    def add_documents(self, docs: List[IndexedDocument]) -> None:
+    def add_documents(self, docs: list[IndexedDocument]) -> None:
         """Add documents to lexical index."""
         for doc in docs:
             tokens = tokenize(doc.text)
@@ -48,19 +52,19 @@ class LexicalMatcher:
         total_len = sum(self.doc_lengths.values())
         self.avg_doc_len = (total_len / self.num_docs) if self.num_docs > 0 else 0.0
 
-    def score(self, query: str) -> Dict[str, float]:
+    def score(self, query: str) -> dict[str, float]:
         """Score all documents against query using BM25 with exact phrase bonus."""
         q_tokens = tokenize(query)
         if not q_tokens or self.num_docs == 0:
             return {}
 
         q_lower = query.lower().strip()
-        scores: Dict[str, float] = {}
+        scores: dict[str, float] = {}
 
         for doc_id, tokens in self.doc_tokens.items():
             doc_len = self.doc_lengths.get(doc_id, 0)
             score = 0.0
-            term_counts: Dict[str, int] = {}
+            term_counts: dict[str, int] = {}
             for t in tokens:
                 term_counts[t] = term_counts.get(t, 0) + 1
 
@@ -109,9 +113,9 @@ class HybridRetrievalIndex:
 
     def __init__(
         self,
-        persist_directory: Optional[str | Path] = None,
-        chroma_client: Optional[ClientAPI] = None,
-        embedding_function: Optional[Any] = None,
+        persist_directory: str | Path | None = None,
+        chroma_client: ClientAPI | None = None,
+        embedding_function: Any | None = None,
         alpha: float = 0.6,  # Weight for vector score (1 - alpha for keyword score)
     ):
         self.alpha = alpha
@@ -132,9 +136,9 @@ class HybridRetrievalIndex:
             metadata={"hnsw:space": "cosine"},
         )
         self.lexical_index = LexicalMatcher()
-        self.docs_by_id: Dict[str, IndexedDocument] = {}
+        self.docs_by_id: dict[str, IndexedDocument] = {}
 
-    def index_documents(self, documents: List[IndexedDocument]) -> None:
+    def index_documents(self, documents: list[IndexedDocument]) -> None:
         """Add documents to both ChromaDB collection and lexical index."""
         if not documents:
             return
@@ -161,9 +165,9 @@ class HybridRetrievalIndex:
 
         self.lexical_index.add_documents(documents)
 
-    def index_commits(self, commits: List[CommitRecord]) -> None:
+    def index_commits(self, commits: list[CommitRecord]) -> None:
         """Index commit messages with author and file modification metadata."""
-        docs: List[IndexedDocument] = []
+        docs: list[IndexedDocument] = []
         for c in commits:
             touched_files = [m.path for m in c.modifications]
             file_list_str = ", ".join(touched_files)
@@ -187,9 +191,9 @@ class HybridRetrievalIndex:
             )
         self.index_documents(docs)
 
-    def index_pull_requests(self, prs: List[PullRequestNodeData]) -> None:
+    def index_pull_requests(self, prs: list[PullRequestNodeData]) -> None:
         """Index PR titles, descriptions, and metadata."""
-        docs: List[IndexedDocument] = []
+        docs: list[IndexedDocument] = []
         for pr in prs:
             text = f"Pull Request #{pr.number}: {pr.title}\n{pr.description or ''}"
             docs.append(
@@ -208,9 +212,9 @@ class HybridRetrievalIndex:
             )
         self.index_documents(docs)
 
-    def index_file_structures(self, structures: List[FileStructureRecord]) -> None:
+    def index_file_structures(self, structures: list[FileStructureRecord]) -> None:
         """Index docstrings extracted from modules, classes, and functions."""
-        docs: List[IndexedDocument] = []
+        docs: list[IndexedDocument] = []
         for s in structures:
             # 1. Module docstring
             if s.docstring:
@@ -266,7 +270,7 @@ class HybridRetrievalIndex:
     def index_ingestion_result(
         self,
         result: IngestionResult,
-        pull_requests: Optional[List[PullRequestNodeData]] = None,
+        pull_requests: list[PullRequestNodeData] | None = None,
     ) -> None:
         """Index full ingestion output (commits, AST docstrings) and optional PRs."""
         self.index_commits(result.commits)
@@ -278,9 +282,9 @@ class HybridRetrievalIndex:
         self,
         query: str,
         top_k: int = 5,
-        doc_type: Optional[DocumentType] = None,
-        subject_filter: Optional[str] = None,
-    ) -> List[SearchResult]:
+        doc_type: DocumentType | None = None,
+        subject_filter: str | None = None,
+    ) -> list[SearchResult]:
         """
         Execute hybrid search combining vector distance and keyword relevance.
         Supports filtering by document type and subject prefix.
@@ -296,11 +300,11 @@ class HybridRetrievalIndex:
         if doc_type:
             where_filter["doc_type"] = doc_type.value
 
-        vector_scores: Dict[str, float] = {}
+        vector_scores: dict[str, float] = {}
         try:
             # Query more candidates from vector store to fuse with keyword results
             n_results = min(max(top_k * 3, 20), len(self.docs_by_id))
-            query_kwargs: Dict[str, Any] = {
+            query_kwargs: dict[str, Any] = {
                 "query_texts": [query],
                 "n_results": n_results,
             }
@@ -327,7 +331,7 @@ class HybridRetrievalIndex:
                 if query.lower() in doc.text.lower():
                     all_candidate_ids.add(d_id)
 
-        results: List[SearchResult] = []
+        results: list[SearchResult] = []
         for doc_id in all_candidate_ids:
             doc = self.docs_by_id.get(doc_id)
             if not doc:

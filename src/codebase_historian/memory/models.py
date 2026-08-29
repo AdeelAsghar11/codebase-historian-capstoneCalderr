@@ -4,8 +4,8 @@ Data models for the SQLite memory store, audit logs, and reconciliation logic.
 
 from datetime import datetime
 from enum import Enum
-from typing import Optional
-from uuid import UUID, uuid4
+from uuid import uuid4
+
 from pydantic import BaseModel, Field
 
 
@@ -40,7 +40,7 @@ class IndexState(BaseModel):
 
 
 class AuditLogEntry(BaseModel):
-    id: Optional[int] = None
+    id: int | None = None
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     caller_id: str
     tool_name: str

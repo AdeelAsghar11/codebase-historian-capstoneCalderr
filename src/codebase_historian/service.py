@@ -4,7 +4,7 @@ Used by both the FastAPI REST API and Typer CLI.
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from codebase_historian.agents.orchestrator import HistorianOrchestrator
 from codebase_historian.agents.schemas import (
@@ -27,8 +27,8 @@ class HistorianService:
     def __init__(
         self,
         repo_path: str = ".",
-        db_path: Optional[str] = None,
-        chroma_path: Optional[str] = None,
+        db_path: str | None = None,
+        chroma_path: str | None = None,
     ):
         self.repo_path = Path(repo_path).resolve()
         self.db_path = db_path or settings.db_path
@@ -52,7 +52,7 @@ class HistorianService:
             memory_store=self.memory_store,
         )
 
-    def ingest(self, repo_path: Optional[str] = None) -> IngestionResult:
+    def ingest(self, repo_path: str | None = None) -> IngestionResult:
         """Run repository ingestion, populate knowledge graph and hybrid index."""
         target_path = Path(repo_path).resolve() if repo_path else self.repo_path
         pipeline = IngestionPipeline(target_path)
@@ -86,7 +86,7 @@ class HistorianService:
 
         return result
 
-    def explain(self, target: str, repo_url: Optional[str] = None) -> ExplainResponse:
+    def explain(self, target: str, repo_url: str | None = None) -> ExplainResponse:
         """Route to Historian agent to explain a target."""
         state = self.orchestrator.run(
             query=f"Why does {target} exist?",
@@ -97,7 +97,7 @@ class HistorianService:
             answer="Unable to explain target.", confidence=0.0
         )
 
-    def impact(self, change_description: str, repo_url: Optional[str] = None) -> ImpactResponse:
+    def impact(self, change_description: str, repo_url: str | None = None) -> ImpactResponse:
         """Route to Impact / Risk agent."""
         state = self.orchestrator.run(
             query=change_description,
@@ -107,7 +107,7 @@ class HistorianService:
             affected_files=[], confidence=0.0, evidence="co-change"
         )
 
-    def suggest_refactor(self, target: str, repo_url: Optional[str] = None) -> RefactorResponse:
+    def suggest_refactor(self, target: str, repo_url: str | None = None) -> RefactorResponse:
         """Route to Refactor Proposer <-> Critic debate loop."""
         state = self.orchestrator.run(
             query=f"Refactor {target}",
@@ -120,7 +120,7 @@ class HistorianService:
             status="rejected_by_critic",
         )
 
-    def onboarding_guide(self, repo_url: Optional[str] = None) -> OnboardingResponse:
+    def onboarding_guide(self, repo_url: str | None = None) -> OnboardingResponse:
         """Route to Onboarding agent."""
         state = self.orchestrator.run(
             query="Generate onboarding guide",
@@ -128,7 +128,7 @@ class HistorianService:
         )
         return state.get("onboarding_response") or OnboardingResponse()
 
-    def health(self) -> Dict[str, Any]:
+    def health(self) -> dict[str, Any]:
         """Return system health and index freshness."""
         idx_state = self.memory_store.get_index_state(str(self.repo_path))
         summary = self.knowledge_graph.summary()

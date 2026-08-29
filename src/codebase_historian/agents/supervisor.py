@@ -4,7 +4,7 @@ Analyzes user requests and routes execution to the appropriate specialist agent.
 """
 
 import re
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 from codebase_historian.agents.state import AgentState
 
@@ -12,10 +12,10 @@ from codebase_historian.agents.state import AgentState
 class SupervisorAgent:
     """Supervisor router that inspects queries and routes to the appropriate specialist."""
 
-    def __init__(self, llm: Optional[Any] = None):
+    def __init__(self, llm: Any | None = None):
         self.llm = llm
 
-    def route_query(self, query: str, target: Optional[str] = None) -> Tuple[str, Optional[str]]:
+    def route_query(self, query: str, target: str | None = None) -> tuple[str, str | None]:
         """
         Classify query intent and return (route, target).
         Available routes:
@@ -44,7 +44,7 @@ class SupervisorAgent:
         extracted_target = target or self._extract_target(query)
         return "historian", extracted_target
 
-    def _extract_target(self, query: str) -> Optional[str]:
+    def _extract_target(self, query: str) -> str | None:
         """Try to extract a file path or symbol name mentioned in the query."""
         # Check for paths with extensions like .py, .md, .json, .ts
         path_match = re.search(r"[\w/\\]+\.(?:py|md|json|ts|js|html|css|yaml|yml)\b", query)
@@ -58,7 +58,7 @@ class SupervisorAgent:
 
         return None
 
-    def __call__(self, state: AgentState) -> Dict[str, Any]:
+    def __call__(self, state: AgentState) -> dict[str, Any]:
         """LangGraph node function for supervisor routing."""
         query = state.get("query", "")
         existing_target = state.get("target")

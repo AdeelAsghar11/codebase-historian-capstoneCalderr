@@ -2,26 +2,27 @@
 Unit tests for the CodebaseKnowledgeGraph and KnowledgeGraphBuilder.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
+
 import pytest
 
+from codebase_historian.graph.builder import KnowledgeGraphBuilder
+from codebase_historian.graph.graph import CodebaseKnowledgeGraph
+from codebase_historian.graph.models import (
+    EdgeType,
+    IssueNodeData,
+    NodeType,
+    PullRequestNodeData,
+)
 from codebase_historian.ingestion.models import (
     AuthorRecord,
+    CoChangeRecord,
     CommitRecord,
     FileModificationRecord,
-    CoChangeRecord,
     FileStructureRecord,
 )
 from codebase_historian.ingestion.pipeline import IngestionResult
-from codebase_historian.graph.models import (
-    NodeType,
-    EdgeType,
-    PullRequestNodeData,
-    IssueNodeData,
-)
-from codebase_historian.graph.graph import CodebaseKnowledgeGraph
-from codebase_historian.graph.builder import KnowledgeGraphBuilder
 
 
 @pytest.fixture
@@ -33,7 +34,7 @@ def sample_ingestion_result() -> IngestionResult:
     c1 = CommitRecord(
         sha="sha_001",
         author=author1,
-        timestamp=datetime(2026, 1, 1, 12, 0, tzinfo=timezone.utc),
+        timestamp=datetime(2026, 1, 1, 12, 0, tzinfo=UTC),
         message="feat: initial commit with auth",
         parent_shas=[],
         modifications=[
@@ -50,7 +51,7 @@ def sample_ingestion_result() -> IngestionResult:
     c2 = CommitRecord(
         sha="sha_002",
         author=author2,
-        timestamp=datetime(2026, 1, 2, 14, 0, tzinfo=timezone.utc),
+        timestamp=datetime(2026, 1, 2, 14, 0, tzinfo=UTC),
         message="feat: add user service depending on auth",
         parent_shas=["sha_001"],
         modifications=[

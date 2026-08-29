@@ -45,3 +45,17 @@ packages = ["src/codebase_historian"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+
+[tool.ruff]
+src = ["src", "tests"]
+exclude = [
+    ".venv",
+    ".git",
+    "build",
+    "dist",
+    "__pycache__",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]

@@ -3,7 +3,8 @@ Data models for the hybrid retrieval index.
 """
 
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -18,7 +19,7 @@ class IndexedDocument(BaseModel):
     text: str
     doc_type: DocumentType
     subject: str  # File path or symbol qualname
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class SearchResult(BaseModel):
@@ -27,6 +28,6 @@ class SearchResult(BaseModel):
     doc_type: DocumentType
     subject: str
     score: float  # Hybrid ranking score (higher is more relevant)
-    vector_score: Optional[float] = None
-    keyword_score: Optional[float] = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    vector_score: float | None = None
+    keyword_score: float | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)

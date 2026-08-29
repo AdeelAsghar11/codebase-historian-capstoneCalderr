@@ -3,13 +3,13 @@ Unit tests for the ingestion pipeline, git extraction, and AST parsing.
 """
 
 from pathlib import Path
+
 import git
 import pytest
 
 from codebase_historian.ingestion.ast_parser import ASTParser
 from codebase_historian.ingestion.git_extractor import GitExtractor
 from codebase_historian.ingestion.pipeline import IngestionPipeline
-
 
 SAMPLE_CODE = '''"""Sample module docstring."""
 
@@ -108,7 +108,7 @@ def test_ast_parser_dependency_resolution():
 def temp_git_repo(tmp_path: Path):
     """Fixture that initializes a temporary Git repository with sample commits."""
     repo = git.Repo.init(tmp_path)
-    
+
     # Configure git author for the temporary repo
     with repo.config_writer() as config:
         config.set_value("user", "name", "Test Historian")

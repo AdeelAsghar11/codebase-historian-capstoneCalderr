@@ -4,6 +4,7 @@ Verifies that Historian answers achieve >= 80% faithfulness against ground truth
 """
 
 from pathlib import Path
+
 import pytest
 
 from codebase_historian.service import HistorianService

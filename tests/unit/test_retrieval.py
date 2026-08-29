@@ -2,9 +2,8 @@
 Unit tests for the HybridRetrievalIndex and LexicalMatcher.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-import pytest
 
 from codebase_historian.graph.models import PullRequestNodeData
 from codebase_historian.ingestion.models import (
@@ -16,8 +15,11 @@ from codebase_historian.ingestion.models import (
     FileStructureRecord,
 )
 from codebase_historian.ingestion.pipeline import IngestionResult
+from codebase_historian.retrieval.hybrid_index import (
+    HybridRetrievalIndex,
+    LexicalMatcher,
+)
 from codebase_historian.retrieval.models import DocumentType, IndexedDocument
-from codebase_historian.retrieval.hybrid_index import HybridRetrievalIndex, LexicalMatcher
 
 
 def test_lexical_matcher():
@@ -55,7 +57,7 @@ def test_hybrid_index_indexing_commits():
         CommitRecord(
             sha="c1_sha",
             author=AuthorRecord(id="alice@example.com", display_name="Alice"),
-            timestamp=datetime(2026, 1, 1, 12, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2026, 1, 1, 12, 0, tzinfo=UTC),
             message="feat: implement OAuth2 authentication provider",
             modifications=[
                 FileModificationRecord(path="src/auth/oauth.py", change_type="A")
@@ -64,7 +66,7 @@ def test_hybrid_index_indexing_commits():
         CommitRecord(
             sha="c2_sha",
             author=AuthorRecord(id="bob@example.com", display_name="Bob"),
-            timestamp=datetime(2026, 1, 2, 14, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2026, 1, 2, 14, 0, tzinfo=UTC),
             message="fix: resolve memory leak in background worker task queue",
             modifications=[
                 FileModificationRecord(path="src/worker/queue.py", change_type="M")
@@ -157,7 +159,7 @@ def test_hybrid_index_persistence(tmp_path: Path):
         CommitRecord(
             sha="persisted_sha",
             author=AuthorRecord(id="dev@example.com", display_name="Dev"),
-            timestamp=datetime(2026, 2, 1, 10, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2026, 2, 1, 10, 0, tzinfo=UTC),
             message="docs: update architecture decision records",
             modifications=[
                 FileModificationRecord(path="docs/DECISIONS.md", change_type="M")
@@ -181,7 +183,7 @@ def test_index_full_ingestion_result():
         CommitRecord(
             sha="sha_pipeline",
             author=author,
-            timestamp=datetime(2026, 3, 1, 12, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2026, 3, 1, 12, 0, tzinfo=UTC),
             message="feat: pipeline integration test commit",
             modifications=[FileModificationRecord(path="pipeline.py", change_type="A")],
         )

@@ -2,14 +2,12 @@
 Typer and Rich CLI for Codebase Historian.
 """
 
-from pathlib import Path
-from typing import Optional
 
+import typer
 from rich import print as rprint
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-import typer
 
 from codebase_historian.service import HistorianService
 

@@ -4,7 +4,7 @@ NetworkX-backed Codebase Knowledge Graph representation and query interface.
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 import networkx as nx
 
@@ -12,7 +12,8 @@ from codebase_historian.graph.models import EdgeType, NodeType
 
 
 def file_node_id(path: str) -> str:
-    return f"file:{path.replace('\\', '/')}"
+    clean_path = path.replace("\\", "/")
+    return f"file:{clean_path}"
 
 
 def commit_node_id(sha: str) -> str:
@@ -34,12 +35,12 @@ def issue_node_id(number: int) -> str:
 class CodebaseKnowledgeGraph:
     """Directed multigraph representing files, commits, authors, and relationships."""
 
-    def __init__(self, graph: Optional[nx.MultiDiGraph] = None):
+    def __init__(self, graph: nx.MultiDiGraph | None = None):
         self.g: nx.MultiDiGraph = graph if graph is not None else nx.MultiDiGraph()
 
     # --- Node Queries ---
 
-    def get_file_history(self, file_path: str) -> List[Dict[str, Any]]:
+    def get_file_history(self, file_path: str) -> list[dict[str, Any]]:
         """
         Get all commits that modified a file, with commit details and diff stats.
         Returns list ordered chronologically by commit timestamp.
@@ -71,7 +72,7 @@ class CodebaseKnowledgeGraph:
 
     def get_file_co_changes(
         self, file_path: str, min_count: int = 1
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Get files that historically co-change with the given file."""
         f_id = file_node_id(file_path)
         if not self.g.has_node(f_id):
@@ -94,7 +95,7 @@ class CodebaseKnowledgeGraph:
         co_changes.sort(key=lambda x: x["co_change_count"], reverse=True)
         return co_changes
 
-    def get_file_dependencies(self, file_path: str) -> Dict[str, List[str]]:
+    def get_file_dependencies(self, file_path: str) -> dict[str, list[str]]:
         """Get static dependencies for a file (both upstream imported and downstream consumers)."""
         f_id = file_node_id(file_path)
         if not self.g.has_node(f_id):
@@ -119,16 +120,16 @@ class CodebaseKnowledgeGraph:
 
     def get_blast_radius(
         self,
-        file_paths: List[str],
+        file_paths: list[str],
         min_co_changes: int = 1,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Predict blast radius for a proposed change to one or more files.
         Combines historical co-change patterns and AST dependency links.
         Returns sorted list of affected files with evidence category and confidence.
         """
         targets = {p.replace("\\", "/") for p in file_paths}
-        affected: Dict[str, Dict[str, Any]] = {}
+        affected: dict[str, dict[str, Any]] = {}
 
         for file_path in targets:
             # 1. Co-change evidence
@@ -209,7 +210,7 @@ class CodebaseKnowledgeGraph:
         results.sort(key=lambda x: (x["confidence"], x["co_change_count"]), reverse=True)
         return results
 
-    def compute_centralities(self) -> Dict[str, float]:
+    def compute_centralities(self) -> dict[str, float]:
         """
         Compute graph centrality across file nodes using PageRank on the file-relation subgraph.
         Annotates 'centrality' property on File nodes and returns mapping {file_path: score}.
@@ -250,7 +251,7 @@ class CodebaseKnowledgeGraph:
 
         return centrality_map
 
-    def get_central_files(self, top_n: int = 10) -> List[Dict[str, Any]]:
+    def get_central_files(self, top_n: int = 10) -> list[dict[str, Any]]:
         """Get the most central files in the repository."""
         file_nodes = [
             (n.replace("file:", ""), d.get("centrality", 0.0))
@@ -260,14 +261,14 @@ class CodebaseKnowledgeGraph:
         file_nodes.sort(key=lambda x: x[1], reverse=True)
         return [{"file": path, "centrality": score} for path, score in file_nodes[:top_n]]
 
-    def summary(self) -> Dict[str, Any]:
+    def summary(self) -> dict[str, Any]:
         """Return graph counts and metadata."""
-        node_counts: Dict[str, int] = {}
+        node_counts: dict[str, int] = {}
         for _, data in self.g.nodes(data=True):
             t = data.get("type", "Unknown")
             node_counts[t] = node_counts.get(t, 0) + 1
 
-        edge_counts: Dict[str, int] = {}
+        edge_counts: dict[str, int] = {}
         for _, _, data in self.g.edges(data=True):
             t = data.get("type", "Unknown")
             edge_counts[t] = edge_counts.get(t, 0) + 1
