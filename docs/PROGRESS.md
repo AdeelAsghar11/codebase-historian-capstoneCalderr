@@ -76,6 +76,15 @@ Entry template:
 **Decisions made:** None (aligned with ADR 0007 and DATA_MODEL.md).
 **Next:** Phase 1 milestone 5 (`ROADMAP.md`) — Supervisor-orchestrated routing (LangGraph state graph).
 
+---
+
+### 2026-08-29 — Supervisor routing, specialist agents, debate loop, and human gate implemented
+**Built:** Implemented LangGraph state graph in `src/codebase_historian/agents/` connecting `SupervisorAgent` routing to `HistorianAgent` (cited evidence-backed explanations), `ImpactAgent` (blast radius prediction), `OnboardingAgent` (centrality-ordered contributor guide), and the adversarial `RefactorProposerAgent` <-> `CriticAgent` debate loop. Implemented the mandatory `human_review_gate` guaranteeing that refactor proposals strictly remain in `pending_human_review`. Schema-validated Pydantic outputs on every response. Verified with 7 dedicated unit tests including the non-negotiable human review safety test (31/31 total test suite passing).
+**Files touched:** `src/codebase_historian/agents/__init__.py`, `src/codebase_historian/agents/schemas.py`, `src/codebase_historian/agents/state.py`, `src/codebase_historian/agents/supervisor.py`, `src/codebase_historian/agents/historian.py`, `src/codebase_historian/agents/impact.py`, `src/codebase_historian/agents/onboarding.py`, `src/codebase_historian/agents/refactor.py`, `src/codebase_historian/agents/orchestrator.py`, `tests/unit/test_agents.py`, `docs/ROADMAP.md`, `docs/PROGRESS.md`.
+**Decisions made:** None (aligned with ADR 0001, ADR 0006, and ARCHITECTURE.md).
+**Next:** Phase 1 milestone 6 (`ROADMAP.md`) — CLI (Typer + Rich) and minimal REST API (FastAPI).
+
+
 
 
 

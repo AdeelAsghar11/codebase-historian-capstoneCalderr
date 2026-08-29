@@ -10,11 +10,11 @@ Outcome: a complete, demoable, evaluated system on its own.
 - [x] Knowledge graph construction (NetworkX) — files × commits × PRs × authors × co-change edges
 - [x] Hybrid retrieval index (ChromaDB + embeddings) over commit messages, PRs, docstrings
 - [x] Reconciled memory store (SQLite) — add / update / delete / no-op logic
-- [ ] Supervisor-orchestrated routing (LangGraph state graph)
-- [ ] Historian agent — cited, evidence-grounded explanations
-- [ ] Refactor Proposer ↔ Critic adversarial debate loop
-- [ ] Mandatory human review gate before any refactor suggestion is considered approved (CLI-level confirmation is acceptable for Phase 1)
-- [ ] Structured, schema-validated output (Pydantic) on every agent response
+- [x] Supervisor-orchestrated routing (LangGraph state graph)
+- [x] Historian agent — cited, evidence-grounded explanations
+- [x] Refactor Proposer ↔ Critic adversarial debate loop
+- [x] Mandatory human review gate before any refactor suggestion is considered approved (CLI-level confirmation is acceptable for Phase 1)
+- [x] Structured, schema-validated output (Pydantic) on every agent response
 - [ ] CLI (Typer + Rich)
 - [ ] Minimal REST API (FastAPI) exposing the same capabilities as the CLI
 - [ ] Containerized build (Dockerfile + docker-compose for local dev)
