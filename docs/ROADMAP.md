@@ -7,7 +7,7 @@ This file tracks planned scope per phase. It is not a log of what's actually bee
 Outcome: a complete, demoable, evaluated system on its own.
 
 - [x] Ingestion pipeline — git history + source AST structure extraction
-- [ ] Knowledge graph construction (NetworkX) — files × commits × PRs × authors × co-change edges
+- [x] Knowledge graph construction (NetworkX) — files × commits × PRs × authors × co-change edges
 - [ ] Hybrid retrieval index (ChromaDB + embeddings) over commit messages, PRs, docstrings
 - [ ] Reconciled memory store (SQLite) — add / update / delete / no-op logic
 - [ ] Supervisor-orchestrated routing (LangGraph state graph)

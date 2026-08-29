@@ -52,6 +52,15 @@ Entry template:
 **Decisions made:** None (followed locked decisions in `TECH_STACK.md` and `DATA_MODEL.md`).
 **Next:** Phase 1 milestone 2 (`ROADMAP.md`) — Knowledge graph construction (NetworkX) populating nodes (`File`, `Commit`, `PullRequest`, `Issue`, `Author`) and edges (`MODIFIES`, `AUTHORED_BY`, `CO_CHANGES_WITH`, `DEPENDS_ON`).
 
+---
+
+### 2026-08-29 — Knowledge graph construction (NetworkX) implemented
+**Built:** Implemented `CodebaseKnowledgeGraph` and `KnowledgeGraphBuilder` in `src/codebase_historian/graph/` constructing a directed multigraph with nodes (`File`, `Commit`, `PullRequest`, `Issue`, `Author`) and edges (`MODIFIES`, `AUTHORED_BY`, `CO_CHANGES_WITH`, `DEPENDS_ON`, `INCLUDES`, `REFERENCES`). Implemented graph query interfaces for file history tracing, co-change lookup, AST upstream/downstream dependency retrieval, blast radius prediction with confidence scoring, and PageRank file centrality ranking. Added graph JSON serialization roundtripping. All 13 unit tests passing.
+**Files touched:** `src/codebase_historian/graph/__init__.py`, `src/codebase_historian/graph/models.py`, `src/codebase_historian/graph/graph.py`, `src/codebase_historian/graph/builder.py`, `tests/unit/test_graph.py`, `docs/ROADMAP.md`, `docs/PROGRESS.md`.
+**Decisions made:** None (aligned with ADR 0002 and DATA_MODEL.md).
+**Next:** Phase 1 milestone 3 (`ROADMAP.md`) — Hybrid retrieval index (ChromaDB + embeddings) over commit messages, PRs, and docstrings.
+
+
 
 
 
