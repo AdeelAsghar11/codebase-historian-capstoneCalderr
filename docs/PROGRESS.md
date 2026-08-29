@@ -100,6 +100,15 @@ Entry template:
 **Decisions made:** None (aligned with TESTING.md, TECH_STACK.md, and ARCHITECTURE.md).
 **Next:** Begin Phase 2 (`ROADMAP.md`) — Production Hardening: API-key authentication, rate limiting, and structured audit logging.
 
+---
+
+### 2026-08-29 — API-key authentication, rate limiting, and audit logging implemented
+**Built:** Implemented `verify_api_key` dependency and thread-safe `TokenBucketRateLimiter` in `src/codebase_historian/api/security.py`, supporting Bearer tokens and `X-API-Key` headers with 429 Retry-After handling. Created `AuditLoggingMiddleware` in `src/codebase_historian/api/middleware.py` recording every API request with caller, tool, endpoint, latency in ms, and status code into SQLite `audit_log` table. Wired into `/v1` routers and verified with integration and unit tests (37/37 total test suite passing).
+**Files touched:** `src/codebase_historian/config.py`, `src/codebase_historian/memory/store.py`, `src/codebase_historian/api/security.py`, `src/codebase_historian/api/middleware.py`, `src/codebase_historian/api/routers.py`, `src/codebase_historian/api/app.py`, `src/codebase_historian/api/__init__.py`, `tests/integration/test_api_and_cli.py`, `tests/unit/test_security_and_audit.py`, `docs/ROADMAP.md`, `docs/PROGRESS.md`.
+**Decisions made:** None (aligned with ARCHITECTURE.md, API.md, and DATA_MODEL.md).
+**Next:** Phase 2 milestone 4 (`ROADMAP.md`) — MCP server (FastMCP) exposing explain / trace-impact / suggest-refactor / onboarding as tools.
+
+
 
 
 

@@ -24,9 +24,9 @@ Outcome: a complete, demoable, evaluated system on its own.
 
 Outcome: a system a third party could deploy and trust.
 
-- [ ] API-key authentication + token-bucket rate limiting on every REST endpoint and MCP tool
-- [ ] Structured audit logging (SQLite) — timestamp, caller, tool, latency
-- [ ] Health-check endpoint — graph freshness, last-indexed commit
+- [x] API-key authentication + token-bucket rate limiting on every REST endpoint and MCP tool
+- [x] Structured audit logging (SQLite) — timestamp, caller, tool, latency
+- [x] Health-check endpoint — graph freshness, last-indexed commit
 - [ ] MCP server (FastMCP) exposing explain / trace-impact / suggest-refactor / onboarding as tools
 - [ ] MCP Inspector validation + at least one live client integration test
 - [ ] Incremental re-indexing via webhook

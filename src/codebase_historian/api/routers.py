@@ -15,9 +15,10 @@ from codebase_historian.agents.schemas import (
     RefactorRequest,
     RefactorResponse,
 )
+from codebase_historian.api.security import verify_api_key
 from codebase_historian.service import HistorianService
 
-router = APIRouter(prefix="/v1")
+router = APIRouter(prefix="/v1", dependencies=[Depends(verify_api_key)])
 
 # Global or dependency-injected service instance
 _service: HistorianService | None = None

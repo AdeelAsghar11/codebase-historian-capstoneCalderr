@@ -278,6 +278,8 @@ class SQLiteMemoryStore:
             for row in cursor.fetchall()
         ]
 
+    get_audit_logs = list_audit_logs
+
     def close(self) -> None:
         self.conn.close()
 
