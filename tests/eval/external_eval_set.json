@@ -1,0 +1,30 @@
+[
+  {
+    "id": "ext_eval_001",
+    "target": "router.py",
+    "question": "Why does router.py exist?",
+    "expected_keywords": ["router", "task", "queue", "priority"],
+    "min_citations": 1
+  },
+  {
+    "id": "ext_eval_002",
+    "target": "worker.py",
+    "question": "Why does worker.py exist?",
+    "expected_keywords": ["worker", "pool", "async", "timeout"],
+    "min_citations": 1
+  },
+  {
+    "id": "ext_eval_003",
+    "target": "queue.py",
+    "question": "Why does queue.py exist?",
+    "expected_keywords": ["queue", "task", "worker"],
+    "min_citations": 1
+  },
+  {
+    "id": "ext_eval_004",
+    "target": "priority.py",
+    "question": "Why does priority.py exist?",
+    "expected_keywords": ["priority", "heap", "scheduling"],
+    "min_citations": 1
+  }
+]

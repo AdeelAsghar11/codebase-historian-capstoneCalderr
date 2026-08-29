@@ -140,6 +140,15 @@ Entry template:
 **Decisions made:** None (aligned with ARCHITECTURE.md, TECH_STACK.md, and CONVENTIONS.md).
 **Next:** Phase 3 milestone 4 (`ROADMAP.md`) — Validation against a second, external repository never seen during development.
 
+---
+
+### 2026-08-30 — Validation against a second, external repository never seen during development
+**Built:** Constructed realistic multi-commit external repository fixture (`micro_task_router`) with independent Git history and AST dependency graphs. Formulated ground truth evaluation set `tests/eval/external_eval_set.json`. Ran full faithfulness evaluation suite against unseen code in `tests/eval/test_external_repo_eval.py`, achieving **100.0% Faithfulness** (exceeding >= 80% PRD.md target). Validated out-of-the-box generalization for Impact blast-radius prediction and Onboarding reading order ranking. All 48 tests passing across the entire test suite.
+**Files touched:** `tests/eval/external_eval_set.json`, `tests/eval/test_external_repo_eval.py`, `docs/ROADMAP.md`, `docs/PROGRESS.md`.
+**Decisions made:** None (aligned with TESTING.md, PRD.md, and CONVENTIONS.md).
+**Next:** Phase 3 milestone 5 (`ROADMAP.md`) — Recorded end-to-end demonstration.
+
+
 
 
 
