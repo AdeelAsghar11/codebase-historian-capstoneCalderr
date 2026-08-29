@@ -29,8 +29,8 @@ Outcome: a system a third party could deploy and trust.
 - [x] Health-check endpoint — graph freshness, last-indexed commit
 - [x] MCP server (FastMCP) exposing explain / trace-impact / suggest-refactor / onboarding as tools
 - [x] MCP Inspector validation + at least one live client integration test
-- [ ] Incremental re-indexing via webhook
-- [ ] CI pipeline (GitHub Actions) — lint + full test suite on every push
+- [x] Incremental re-indexing via webhook
+- [x] CI pipeline (GitHub Actions) — lint + full test suite on every push
 
 ## Phase 3 — Extended Capabilities — PLANNED
 

@@ -86,6 +86,79 @@ class HistorianService:
 
         return result
 
+    def reindex_incremental(self, repo_path: str | None = None) -> dict[str, Any]:
+        """
+        Run incremental re-indexing triggered by webhook or sync.
+        Extracts new commits since last_indexed_commit_sha and reconciles memory store.
+        """
+        from codebase_historian.ingestion.git_extractor import GitExtractor
+        from codebase_historian.memory.reconciler import MemoryReconciler
+
+        target_path = Path(repo_path).resolve() if repo_path else self.repo_path
+        idx_state = self.memory_store.get_index_state(str(target_path))
+        since_sha = idx_state.last_indexed_commit_sha if idx_state else None
+
+        extractor = GitExtractor(target_path)
+        new_commits = extractor.extract_commits(since_sha=since_sha)
+
+        if not new_commits:
+            return {
+                "reindexed": False,
+                "message": "No new commits since last indexing",
+                "last_indexed_commit": since_sha,
+                "new_commits_count": 0,
+            }
+
+        # Current files in repo
+        current_files = {
+            str(p.relative_to(target_path)).replace("\\", "/")
+            for p in target_path.rglob("*.py")
+            if not any(part.startswith(".") or part == ".venv" for part in p.parts)
+        }
+
+        # 1. Reconcile memory store
+        reconciler = MemoryReconciler(self.memory_store)
+        reconcile_results = reconciler.reconcile_commits(new_commits, current_files)
+
+        # 2. Update knowledge graph
+        builder = KnowledgeGraphBuilder(self.knowledge_graph)
+        for commit in new_commits:
+            builder.add_commit(commit)
+
+        new_co_changes = extractor.calculate_co_changes(new_commits)
+        for co in new_co_changes:
+            builder.add_co_change(co)
+
+        try:
+            self.knowledge_graph.save(self.graph_file)
+        except Exception:
+            pass
+
+        # 3. Index new commits into hybrid retrieval index
+        self.retrieval_index.index_commits(new_commits)
+
+        # 4. Update index state
+        head_commit = new_commits[0].sha
+        self.memory_store.set_index_state(str(target_path), head_commit)
+
+        # Re-initialize orchestrator
+        self.orchestrator = HistorianOrchestrator(
+            knowledge_graph=self.knowledge_graph,
+            retrieval_index=self.retrieval_index,
+            memory_store=self.memory_store,
+        )
+
+        return {
+            "reindexed": True,
+            "previous_commit": since_sha,
+            "head_commit": head_commit,
+            "new_commits_count": len(new_commits),
+            "reconciliation": {
+                "total_actions": len(reconcile_results),
+                "actions": [r.action.value for r in reconcile_results],
+            },
+        }
+
     def explain(self, target: str, repo_url: str | None = None) -> ExplainResponse:
         """Route to Historian agent to explain a target."""
         state = self.orchestrator.run(

@@ -116,6 +116,15 @@ Entry template:
 **Decisions made:** None (aligned with TECH_STACK.md, API.md, and ARCHITECTURE.md).
 **Next:** Phase 2 milestone 6 (`ROADMAP.md`) — Incremental re-indexing via webhook and CI pipeline (GitHub Actions).
 
+---
+
+### 2026-08-29 — Incremental re-indexing webhook and GitHub Actions CI pipeline implemented — Phase 2 Complete
+**Built:** Implemented `reindex_incremental()` in `src/codebase_historian/service.py` to extract new commits since `last_indexed_commit_sha`, reconcile existing explanations via `MemoryReconciler`, append to knowledge graph, and index new docstrings. Created GitHub push event webhook at `POST /v1/webhook/github` in `src/codebase_historian/api/routers.py`. Built `.github/workflows/ci.yml` running Ruff linter and the full test suite on push and PR. Verified with integration tests (41/41 total test suite passing). All Phase 2 milestones in `ROADMAP.md` are now fully complete.
+**Files touched:** `.github/workflows/ci.yml`, `src/codebase_historian/ingestion/git_extractor.py`, `src/codebase_historian/service.py`, `src/codebase_historian/api/routers.py`, `tests/integration/test_webhook.py`, `docs/ROADMAP.md`, `docs/PROGRESS.md`.
+**Decisions made:** None (aligned with ARCHITECTURE.md, API.md, and TECH_STACK.md).
+**Next:** Begin Phase 3 (`ROADMAP.md`) — Extended Capabilities: Interactive graph-visualization dashboard (Streamlit) and multi-repo evaluation.
+
+
 
 
 

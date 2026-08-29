@@ -2,6 +2,8 @@
 FastAPI route handlers for /v1 endpoints.
 """
 
+from typing import Any
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
@@ -88,4 +90,21 @@ def ingest_repository(req: IngestRequest, service: HistorianService = Depends(ge
         "status": "success",
         "last_indexed_commit": res.last_indexed_commit_sha,
         "stats": res.stats,
+    }
+
+
+@router.post("/webhook/github")
+def github_webhook(
+    payload: dict[str, Any],
+    service: HistorianService = Depends(get_service),
+):
+    """
+    Webhook receiver for GitHub push events.
+    Triggers incremental re-indexing starting from last indexed commit.
+    """
+    reindex_result = service.reindex_incremental()
+    return {
+        "status": "received",
+        "action": "incremental_reindex",
+        "reindex": reindex_result,
     }

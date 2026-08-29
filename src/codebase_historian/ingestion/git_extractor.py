@@ -29,14 +29,16 @@ class GitExtractor:
         branch: str | None = None,
         max_count: int | None = None,
         since_sha: str | None = None,
+        since_commit: str | None = None,
     ) -> list[CommitRecord]:
         """
         Extract commit records from the repository.
-        If `since_sha` is provided, only commits after `since_sha` are extracted.
+        If `since_sha` or `since_commit` is provided, only commits after that SHA are extracted.
         """
+        target_since = since_sha or since_commit
         rev_range = branch if branch else "HEAD"
-        if since_sha:
-            rev_range = f"{since_sha}..{rev_range}"
+        if target_since:
+            rev_range = f"{target_since}..{rev_range}"
 
         try:
             commits_iterable = list(self.repo.iter_commits(rev_range, max_count=max_count))
