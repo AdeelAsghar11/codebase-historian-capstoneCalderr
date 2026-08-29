@@ -68,6 +68,15 @@ Entry template:
 **Decisions made:** None (aligned with ADR 0003 and TECH_STACK.md).
 **Next:** Phase 1 milestone 4 (`ROADMAP.md`) — Reconciled memory store (SQLite) with add / update / delete / no-op logic.
 
+---
+
+### 2026-08-29 — Reconciled memory store (SQLite) implemented
+**Built:** Implemented `SQLiteMemoryStore` and `MemoryReconciler` in `src/codebase_historian/memory/`. Created SQLite tables for `memory_entries`, `audit_log`, and `index_state` matching the schemas in `DATA_MODEL.md`. Built the 4-action reconciliation state engine (`add`, `update`, `delete`, `no-op`) that evaluates previous explanations against newly ingested commits and repository file state, keeping explanations active, updating changed subjects, marking removed subjects deleted, and updating validation timestamps. Covered with 6 dedicated unit tests (24/24 total test suite passing).
+**Files touched:** `src/codebase_historian/memory/__init__.py`, `src/codebase_historian/memory/models.py`, `src/codebase_historian/memory/store.py`, `src/codebase_historian/memory/reconciler.py`, `tests/unit/test_memory.py`, `docs/ROADMAP.md`, `docs/PROGRESS.md`.
+**Decisions made:** None (aligned with ADR 0007 and DATA_MODEL.md).
+**Next:** Phase 1 milestone 5 (`ROADMAP.md`) — Supervisor-orchestrated routing (LangGraph state graph).
+
+
 
 
 

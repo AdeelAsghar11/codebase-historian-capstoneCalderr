@@ -9,7 +9,7 @@ Outcome: a complete, demoable, evaluated system on its own.
 - [x] Ingestion pipeline — git history + source AST structure extraction
 - [x] Knowledge graph construction (NetworkX) — files × commits × PRs × authors × co-change edges
 - [x] Hybrid retrieval index (ChromaDB + embeddings) over commit messages, PRs, docstrings
-- [ ] Reconciled memory store (SQLite) — add / update / delete / no-op logic
+- [x] Reconciled memory store (SQLite) — add / update / delete / no-op logic
 - [ ] Supervisor-orchestrated routing (LangGraph state graph)
 - [ ] Historian agent — cited, evidence-grounded explanations
 - [ ] Refactor Proposer ↔ Critic adversarial debate loop
