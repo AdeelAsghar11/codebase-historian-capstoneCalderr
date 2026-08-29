@@ -60,6 +60,14 @@ class SupervisorAgent:
 
     def __call__(self, state: AgentState) -> dict[str, Any]:
         """LangGraph node function for supervisor routing."""
+        existing_route = state.get("route")
+        if existing_route:
+            return {
+                "route": existing_route,
+                "target": state.get("target"),
+                "status": f"routed_to_{existing_route}",
+            }
+
         query = state.get("query", "")
         existing_target = state.get("target")
 

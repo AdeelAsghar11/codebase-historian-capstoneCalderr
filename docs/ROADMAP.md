@@ -32,12 +32,12 @@ Outcome: a system a third party could deploy and trust.
 - [x] Incremental re-indexing via webhook
 - [x] CI pipeline (GitHub Actions) — lint + full test suite on every push
 
-## Phase 3 — Extended Capabilities — PLANNED
+## Phase 3 — Extended Capabilities — ACTIVE
 
 Outcome: the version that demonstrates range, not just completeness.
 
-- [ ] Impact / Risk agent + historical backtest evaluation
-- [ ] Onboarding agent (centrality-ranked reading order + traced architectural decisions)
+- [x] Impact / Risk agent + historical backtest evaluation
+- [x] Onboarding agent (centrality-ranked reading order + traced architectural decisions)
 - [ ] Interactive graph-visualization dashboard (Streamlit)
 - [ ] Validation against a second, external repository never seen during development
 - [ ] Recorded end-to-end demonstration

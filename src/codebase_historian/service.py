@@ -165,16 +165,24 @@ class HistorianService:
             query=f"Why does {target} exist?",
             target=target,
             repo_url=repo_url,
+            route="historian",
         )
         return state.get("explain_response") or ExplainResponse(
             answer="Unable to explain target.", confidence=0.0
         )
 
-    def impact(self, change_description: str, repo_url: str | None = None) -> ImpactResponse:
+    def impact(
+        self,
+        change_description: str,
+        target: str | None = None,
+        repo_url: str | None = None,
+    ) -> ImpactResponse:
         """Route to Impact / Risk agent."""
         state = self.orchestrator.run(
             query=change_description,
+            target=target,
             repo_url=repo_url,
+            route="impact",
         )
         return state.get("impact_response") or ImpactResponse(
             affected_files=[], confidence=0.0, evidence="co-change"
@@ -186,6 +194,7 @@ class HistorianService:
             query=f"Refactor {target}",
             target=target,
             repo_url=repo_url,
+            route="refactor",
         )
         return state.get("refactor_response") or RefactorResponse(
             proposal="No proposal generated",
@@ -198,6 +207,7 @@ class HistorianService:
         state = self.orchestrator.run(
             query="Generate onboarding guide",
             repo_url=repo_url,
+            route="onboarding",
         )
         return state.get("onboarding_response") or OnboardingResponse()
 

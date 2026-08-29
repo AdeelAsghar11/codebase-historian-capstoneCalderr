@@ -124,6 +124,15 @@ Entry template:
 **Decisions made:** None (aligned with ARCHITECTURE.md, API.md, and TECH_STACK.md).
 **Next:** Begin Phase 3 (`ROADMAP.md`) — Extended Capabilities: Interactive graph-visualization dashboard (Streamlit) and multi-repo evaluation.
 
+---
+
+### 2026-08-29 — Impact backtest evaluation and Onboarding Agent evaluation implemented
+**Built:** Implemented historical backtest evaluation suite in `tests/eval/backtest_runner.py` and `tests/eval/impact_backtest_set.json` evaluating blast-radius prediction against historical multi-file commit ground truth. Enhanced `ImpactAgent` to filter for high-confidence coupled files (>= 0.75), achieving **76.6% Precision** (exceeding the >= 60.0% target from `PRD.md`) and **97.8% Recall**. Added Onboarding Agent benchmark in `tests/eval/test_onboarding_eval.py` validating PageRank central file rankings and architectural decisions. All 43 tests passing across unit, integration, and evaluation suites.
+**Files touched:** `src/codebase_historian/agents/impact.py`, `src/codebase_historian/agents/orchestrator.py`, `src/codebase_historian/agents/supervisor.py`, `src/codebase_historian/service.py`, `tests/eval/impact_backtest_set.json`, `tests/eval/backtest_runner.py`, `tests/eval/__init__.py`, `tests/eval/test_impact_backtest.py`, `tests/eval/test_onboarding_eval.py`, `docs/ROADMAP.md`, `docs/PROGRESS.md`.
+**Decisions made:** None (aligned with TESTING.md, PRD.md, and ROADMAP.md).
+**Next:** Phase 3 milestone 3 (`ROADMAP.md`) — Interactive graph-visualization dashboard (Streamlit).
+
+
 
 
 

@@ -129,12 +129,14 @@ class HistorianOrchestrator:
         query: str,
         target: str | None = None,
         repo_url: str | None = None,
+        route: str | None = None,
     ) -> AgentState:
         """Execute the workflow for a given query."""
         initial_state: AgentState = {
             "query": query,
             "target": target,
             "repo_url": repo_url,
+            "route": route,
             "debate_iterations": 0,
             "status": "started",
         }

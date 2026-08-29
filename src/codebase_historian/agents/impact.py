@@ -46,12 +46,17 @@ class ImpactAgent:
 
         blast = self.kg.get_blast_radius(list(targets))
 
-        affected_files = [b["file"] for b in blast]
-        evidences = [b["evidence"] for b in blast]
+        # Filter for high-confidence affected files (>= 0.75) to exclude diluted broad changes
+        filtered_blast = [b for b in blast if b["confidence"] >= 0.75]
+        if not filtered_blast:
+            filtered_blast = blast[:5]
+
+        affected_files = [b["file"] for b in filtered_blast]
+        evidences = [b["evidence"] for b in filtered_blast]
 
         primary_evidence = "both" if "both" in evidences else ("dependency" if "dependency" in evidences else "co-change")
         avg_confidence = (
-            sum(b["confidence"] for b in blast) / len(blast) if blast else 0.75
+            sum(b["confidence"] for b in filtered_blast) / len(filtered_blast) if filtered_blast else 0.75
         )
 
         return ImpactResponse(
