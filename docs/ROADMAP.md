@@ -17,8 +17,8 @@ Outcome: a complete, demoable, evaluated system on its own.
 - [x] Structured, schema-validated output (Pydantic) on every agent response
 - [x] CLI (Typer + Rich)
 - [x] Minimal REST API (FastAPI) exposing the same capabilities as the CLI
-- [ ] Containerized build (Dockerfile + docker-compose for local dev)
-- [ ] Faithfulness evaluation set (see `TESTING.md`) run against the reference repository
+- [x] Containerized build (Dockerfile + docker-compose for local dev)
+- [x] Faithfulness evaluation set (see `TESTING.md`) run against the reference repository
 
 ## Phase 2 — Production Hardening — PLANNED
 

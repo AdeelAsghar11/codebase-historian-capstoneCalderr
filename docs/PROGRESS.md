@@ -92,6 +92,15 @@ Entry template:
 **Decisions made:** None (aligned with ADR 0004 and TECH_STACK.md).
 **Next:** Phase 1 milestone 7 (`ROADMAP.md`) — Containerized build (Dockerfile + docker-compose for local dev) and faithfulness evaluation set.
 
+---
+
+### 2026-08-29 — Containerized build and faithfulness evaluation implemented — Phase 1 Complete
+**Built:** Created production Dockerfile using multi-stage `uv` build with Git support and `docker-compose.yml` for local API and CLI execution. Built the Faithfulness evaluation harness in `tests/eval/` measuring citation precision and ground-truth verifiability against git history. Verified 100% faithfulness rate (target >= 80% met). All 34 tests passing across unit, integration, and evaluation suites. All Phase 1 milestones in `ROADMAP.md` are now fully complete.
+**Files touched:** `Dockerfile`, `docker-compose.yml`, `.dockerignore`, `tests/eval/reference_eval_set.json`, `tests/eval/eval_runner.py`, `tests/eval/__init__.py`, `tests/eval/test_faithfulness_eval.py`, `docs/ROADMAP.md`, `docs/PROGRESS.md`.
+**Decisions made:** None (aligned with TESTING.md, TECH_STACK.md, and ARCHITECTURE.md).
+**Next:** Begin Phase 2 (`ROADMAP.md`) — Production Hardening: API-key authentication, rate limiting, and structured audit logging.
+
+
 
 
 

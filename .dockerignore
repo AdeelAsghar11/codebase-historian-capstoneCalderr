@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+*.db
+*.sqlite
+*.sqlite3
+.chroma/
+chroma_db/
+.codebase_graph.json
+.git/
+.env
+.env.local

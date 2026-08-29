@@ -1,0 +1,37 @@
+[
+  {
+    "id": "eval_001",
+    "target": "src/codebase_historian/config.py",
+    "question": "Why does src/codebase_historian/config.py exist?",
+    "expected_keywords": ["scaffolding", "documentation", "config"],
+    "min_citations": 1
+  },
+  {
+    "id": "eval_002",
+    "target": "src/codebase_historian/ingestion/git_extractor.py",
+    "question": "Why does src/codebase_historian/ingestion/git_extractor.py exist?",
+    "expected_keywords": ["ingestion", "pipeline", "git"],
+    "min_citations": 1
+  },
+  {
+    "id": "eval_003",
+    "target": "src/codebase_historian/graph/graph.py",
+    "question": "Why does src/codebase_historian/graph/graph.py exist?",
+    "expected_keywords": ["knowledge graph", "networkx", "graph"],
+    "min_citations": 1
+  },
+  {
+    "id": "eval_004",
+    "target": "src/codebase_historian/memory/store.py",
+    "question": "Why does src/codebase_historian/memory/store.py exist?",
+    "expected_keywords": ["memory", "reconciled", "sqlite"],
+    "min_citations": 1
+  },
+  {
+    "id": "eval_005",
+    "target": "src/codebase_historian/agents/refactor.py",
+    "question": "Why does src/codebase_historian/agents/refactor.py exist?",
+    "expected_keywords": ["agent", "refactor", "debate", "gate"],
+    "min_citations": 1
+  }
+]
