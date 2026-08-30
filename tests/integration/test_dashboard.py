@@ -48,3 +48,14 @@ def test_dashboard_app_syntax():
     content = app_path.read_text(encoding="utf-8")
     compiled = compile(content, str(app_path), "exec")
     assert compiled is not None
+
+
+def test_is_repo_ingested():
+    """Verify is_repo_ingested correctly recognizes ingested vs uningested folders."""
+    from codebase_historian.dashboard.app import is_repo_ingested
+
+    # Current repository has .codebase_graph.json
+    assert is_repo_ingested(".") is True
+    # Non-existent or empty folder should return False
+    assert is_repo_ingested("non_existent_folder_xyz123") is False
+

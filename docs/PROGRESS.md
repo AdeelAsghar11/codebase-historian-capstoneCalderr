@@ -169,3 +169,16 @@ Entry template:
 **Files touched:** `src/codebase_historian/agents/historian.py`, `docs/PROGRESS.md`.
 **Decisions made:** Invalidate legacy uninformative memory cache entries on the fly if they lack modern "Overview" content; sanitize console output for Windows cp1252 terminals.
 **Next:** Phase 3 milestone 5 (`ROADMAP.md`) — Recorded end-to-end demonstration.
+
+---
+
+### 2026-08-30 — On-demand repository launcher and instant loading of previously ingested repositories
+**Built:** Removed automatic default repository ingestion (`.`) on dashboard launch. Built a modern **Repository Launcher Hub** in Streamlit (`src/codebase_historian/dashboard/app.py`):
+1. **Previously Ingested Repositories**: Queries SQLite `index_state` via `SQLiteMemoryStore.list_all_index_states()`, presenting each indexed repository with its last indexed commit SHA and timestamp, and an **"⚡ Open Instantly"** action that loads the knowledge graph from disk in milliseconds without re-ingesting.
+2. **On-Demand Repository Selection**: Dedicated tabs for **Local Directory**, **GitHub Online (My Repos)**, and **GitHub URL / Shorthand**. Automatically detects if a chosen folder or cloned repo was previously indexed: provides "⚡ Open Instantly (No Re-index)" or "🔄 Re-ingest Fresh" actions.
+3. **Workspace Switcher & Controls**: Added top navigation and sidebar controls (`🔙 Switch Repo` and `🔄 Re-ingest`) so users can seamlessly swap active repositories or return to the launcher at any time.
+4. **CLI Updates**: Made `--repo-path` optional in `historian dashboard`, allowing users to open directly into the Repository Launcher. Added `is_repo_ingested` helper with tests. All 55 tests passing, lint clean.
+**Files touched:** `src/codebase_historian/memory/store.py`, `src/codebase_historian/dashboard/app.py`, `src/codebase_historian/cli/main.py`, `tests/integration/test_dashboard.py`, `docs/PROGRESS.md`.
+**Decisions made:** When no repository path is explicitly provided to the dashboard, render the launcher hub instead of assuming the current directory; load cached `.codebase_graph.json` instantly without re-running AST parsing and Git extraction.
+**Next:** Phase 3 milestone 5 (`ROADMAP.md`) — Recorded end-to-end demonstration.
+

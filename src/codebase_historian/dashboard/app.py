@@ -19,6 +19,7 @@ from codebase_historian.ingestion.github_resolver import (
     is_github_target,
     list_github_user_repos,
 )
+from codebase_historian.memory.store import SQLiteMemoryStore
 from codebase_historian.service import HistorianService
 
 st.set_page_config(
@@ -29,8 +30,22 @@ st.set_page_config(
 )
 
 
+def is_repo_ingested(repo_path: str | Path) -> bool:
+    """Check if repository has already been indexed (graph file or SQLite index state exists)."""
+    try:
+        p = Path(repo_path).resolve()
+        graph_file = p / ".codebase_graph.json"
+        if graph_file.exists() and graph_file.stat().st_size > 10:
+            return True
+        store = SQLiteMemoryStore()
+        idx_state = store.get_index_state(str(p))
+        return idx_state is not None
+    except Exception:
+        return False
+
+
 @st.cache_resource
-def get_historian_service(repo_path: str = ".") -> HistorianService:
+def get_historian_service(repo_path: str, force_reindex: bool = False) -> HistorianService:
     """Initialize and cache the core HistorianService for the specified repository."""
     if is_github_target(repo_path):
         clean_path, _ = clone_github_repo(repo_path)
@@ -39,21 +54,229 @@ def get_historian_service(repo_path: str = ".") -> HistorianService:
         clean_path = str(Path(repo_path).resolve())
 
     service = HistorianService(repo_path=clean_path)
-    # Ingest repo if graph is empty
-    if service.knowledge_graph.g.number_of_nodes() == 0:
+    # Only ingest if forced or if knowledge graph is empty
+    if force_reindex or service.knowledge_graph.g.number_of_nodes() == 0:
         service.ingest(clean_path)
     return service
 
 
-def main():
-    # --- Determine active repository ---
-    default_repo = os.environ.get("HISTORIAN_REPO_PATH", ".")
-    if "active_repo_path" not in st.session_state:
-        st.session_state["active_repo_path"] = str(Path(default_repo).resolve())
+def render_repository_launcher():
+    """Render repository selection and onboarding hub when no repository is actively loaded."""
+    st.title("📜 Codebase Historian")
+    st.markdown(
+        "### Multi-Agent GraphRAG Platform for Codebase Intelligence\n"
+        "Explore architecture graphs, analyze blast radius impact, run adversarial refactor debates, and trace commit histories."
+    )
+    st.info("💡 **No active repository selected.** Choose a previously indexed repository below to open instantly, or ingest a new local or GitHub repository.")
 
-    # --- Sidebar: Active Repository Switcher ---
+    # 1. Previously Ingested Repositories Section
+    memory_store = SQLiteMemoryStore()
+    prev_states = memory_store.list_all_index_states()
+
+    # Filter for repositories whose directory exists
+    valid_prev = []
+    for s in prev_states:
+        p = Path(s.repo_url)
+        if p.exists():
+            valid_prev.append(s)
+
+    if valid_prev:
+        st.markdown("#### ⚡ Previously Ingested Repositories")
+        st.caption("These repositories are already indexed and load **instantly** without re-ingestion.")
+        for idx, state in enumerate(valid_prev):
+            repo_dir = Path(state.repo_url)
+            col_info, col_btn = st.columns([5, 1])
+            with col_info:
+                st.markdown(f"**📂 `{repo_dir.name}`** — `{state.repo_url}`")
+                indexed_date = state.last_indexed_at.strftime("%Y-%m-%d %H:%M UTC") if state.last_indexed_at else "Unknown"
+                st.caption(f"Last Indexed Commit: `{state.last_indexed_commit_sha[:8]}` • Date: {indexed_date}")
+            with col_btn:
+                if st.button("⚡ Open Instantly", key=f"open_prev_{idx}", type="primary", use_container_width=True):
+                    st.session_state["active_repo_path"] = str(repo_dir.resolve())
+                    st.rerun()
+            st.divider()
+
+    # 2. Select or Ingest a New Repository
+    st.markdown("#### 🚀 Select or Ingest a Repository")
+    tab_local, tab_gh_acc, tab_gh_url = st.tabs([
+        "📁 Local Directory",
+        "🐙 GitHub Account (My Repos)",
+        "🌐 GitHub URL / Shorthand",
+    ])
+
+    with tab_local:
+        st.markdown("Select a local Git repository on your machine.")
+        local_path = st.text_input(
+            "Local Repository Path:",
+            placeholder="e.g. D:\\projects\\my-repo or ../my-repo",
+            key="launcher_local_path",
+        )
+        if local_path.strip():
+            p = Path(local_path.strip()).resolve()
+            if p.exists():
+                already_done = is_repo_ingested(p)
+                if already_done:
+                    st.success(f"Repository `{p.name}` is already indexed! You can open it instantly or re-ingest.")
+                    col_l1, col_l2 = st.columns(2)
+                    with col_l1:
+                        if st.button("⚡ Open Instantly (No Re-index)", type="primary", use_container_width=True):
+                            st.session_state["active_repo_path"] = str(p)
+                            st.rerun()
+                    with col_l2:
+                        if st.button("🔄 Re-ingest Fresh", use_container_width=True):
+                            with st.spinner(f"Re-ingesting {p}..."):
+                                srv = HistorianService(repo_path=str(p))
+                                srv.ingest(str(p))
+                                st.session_state["active_repo_path"] = str(p)
+                                st.cache_resource.clear()
+                                st.rerun()
+                else:
+                    if st.button("🚀 Ingest & Open Repository", type="primary"):
+                        with st.spinner(f"Ingesting {p}..."):
+                            srv = HistorianService(repo_path=str(p))
+                            srv.ingest(str(p))
+                            st.session_state["active_repo_path"] = str(p)
+                            st.cache_resource.clear()
+                            st.rerun()
+            else:
+                st.warning(f"Path does not exist: `{local_path}`")
+
+    with tab_gh_acc:
+        st.markdown("Fetch and clone repositories directly from your GitHub account.")
+        detected_token = get_active_github_token()
+        col_tok, col_user = st.columns(2)
+        with col_tok:
+            gh_token = st.text_input(
+                "GitHub Token (PAT):",
+                value=detected_token or "",
+                type="password",
+                help="Auto-detected from GitHub CLI (`gh auth token`) or GITHUB_TOKEN environment variable.",
+                key="launcher_gh_token",
+            )
+        with col_user:
+            gh_user = st.text_input(
+                "Or GitHub Username:",
+                placeholder="e.g. AdeelAsghar11",
+                key="launcher_gh_user",
+            )
+
+        if st.button("🔍 Fetch My Repositories", key="launcher_btn_fetch"):
+            with st.spinner("Fetching repositories from github.com..."):
+                repos = list_github_user_repos(token=gh_token or None, username=gh_user or None, limit=60)
+                if repos:
+                    st.session_state["gh_repos_list"] = repos
+                    st.success(f"Found {len(repos)} repositories!")
+                else:
+                    st.warning("No repositories found. Check token or username.")
+
+        if st.session_state.get("gh_repos_list"):
+            repo_options = [r["full_name"] for r in st.session_state["gh_repos_list"]]
+            selected_gh = st.selectbox("Choose repository to clone/open:", repo_options, key="launcher_sel_gh")
+            chosen_meta = next((r for r in st.session_state["gh_repos_list"] if r["full_name"] == selected_gh), None)
+            if chosen_meta:
+                badge = "🔒 Private" if chosen_meta.get("private") else "🌍 Public"
+                desc = chosen_meta.get("description") or "No description"
+                st.caption(f"{badge} • ⭐ {chosen_meta.get('stars', 0)} • {desc}")
+
+            # Check if repo was already cloned locally
+            expected_cache = (Path(".repos") / chosen_meta["full_name"].replace("/", "_")).resolve()
+            is_cached = expected_cache.exists() and is_repo_ingested(expected_cache)
+
+            col_g1, col_g2 = st.columns(2)
+            with col_g1:
+                if is_cached:
+                    if st.button("⚡ Open Cached Instantly", type="primary", use_container_width=True):
+                        st.session_state["active_repo_path"] = str(expected_cache)
+                        st.rerun()
+                else:
+                    if st.button("🚀 Clone, Ingest & Open", type="primary", use_container_width=True):
+                        with st.spinner(f"Cloning and ingesting `{selected_gh}`..."):
+                            try:
+                                cloned_dir, method = clone_github_repo(selected_gh, token=gh_token or None)
+                                srv = HistorianService(repo_path=str(cloned_dir))
+                                srv.ingest(str(cloned_dir))
+                                st.session_state["active_repo_path"] = str(cloned_dir)
+                                st.cache_resource.clear()
+                                st.success(f"Ingested `{selected_gh}` successfully via {method}!")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Failed to clone/ingest: {e}")
+            with col_g2:
+                if is_cached:
+                    if st.button("🔄 Pull & Re-ingest Fresh", use_container_width=True):
+                        with st.spinner(f"Pulling and re-ingesting `{selected_gh}`..."):
+                            try:
+                                cloned_dir, method = clone_github_repo(selected_gh, token=gh_token or None)
+                                srv = HistorianService(repo_path=str(cloned_dir))
+                                srv.ingest(str(cloned_dir))
+                                st.session_state["active_repo_path"] = str(cloned_dir)
+                                st.cache_resource.clear()
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Failed to update/ingest: {e}")
+
+    with tab_gh_url:
+        st.markdown("Clone any public repository by URL or owner/repo shorthand.")
+        url_input = st.text_input(
+            "GitHub URL or owner/repo:",
+            placeholder="e.g. pallets/flask or https://github.com/...",
+            key="launcher_url_input",
+        )
+        if url_input.strip():
+            if st.button("🚀 Clone, Ingest & Open", key="launcher_btn_url", type="primary"):
+                with st.spinner(f"Cloning and ingesting `{url_input.strip()}`..."):
+                    try:
+                        cloned_dir, method = clone_github_repo(url_input.strip())
+                        is_cached = is_repo_ingested(cloned_dir)
+                        srv = HistorianService(repo_path=str(cloned_dir))
+                        if not is_cached:
+                            srv.ingest(str(cloned_dir))
+                        st.session_state["active_repo_path"] = str(cloned_dir)
+                        st.cache_resource.clear()
+                        st.success(f"Opened `{url_input}` successfully via {method}!")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Failed to clone/open: {e}")
+
+
+def main():
+    # Check if active repository is set in session_state or explicitly provided via HISTORIAN_REPO_PATH env
+    if "active_repo_path" not in st.session_state:
+        env_repo = os.environ.get("HISTORIAN_REPO_PATH")
+        # Only set if non-empty and not "." default
+        if env_repo and env_repo.strip() and env_repo.strip() != ".":
+            st.session_state["active_repo_path"] = str(Path(env_repo).resolve())
+        else:
+            st.session_state["active_repo_path"] = None
+
+    active_repo = st.session_state.get("active_repo_path")
+
+    # If no repository is active, show the launcher screen
+    if not active_repo:
+        render_repository_launcher()
+        return
+
+    # --- Sidebar: Active Repository Switcher & Manager ---
     st.sidebar.image("https://img.shields.io/badge/Codebase-Historian-blue?style=for-the-badge&logo=git", use_container_width=True)
-    st.sidebar.markdown("### 📁 Select Repository")
+    st.sidebar.markdown(f"### 📂 Active Repository\n`{Path(active_repo).name}`")
+    st.sidebar.caption(f"Path: `{active_repo}`")
+
+    col_btn1, col_btn2 = st.sidebar.columns(2)
+    with col_btn1:
+        if st.sidebar.button("🔙 Switch Repo", use_container_width=True, help="Return to Repository Launcher"):
+            st.session_state["active_repo_path"] = None
+            st.rerun()
+    with col_btn2:
+        if st.sidebar.button("🔄 Re-ingest", use_container_width=True, help="Force fresh re-ingestion of active repository"):
+            with st.spinner("Re-ingesting active repository..."):
+                srv = HistorianService(repo_path=active_repo)
+                srv.ingest(active_repo)
+                st.cache_resource.clear()
+                st.sidebar.success("Re-ingestion complete!")
+                st.rerun()
+
+    st.sidebar.divider()
+    st.sidebar.markdown("### 🔀 Quick Switch")
 
     repo_source = st.sidebar.radio(
         "Choose repository source:",
@@ -64,7 +287,7 @@ def main():
     if repo_source == "📁 Local Folder":
         repo_input = st.sidebar.text_input(
             "Local repository path:",
-            value=st.session_state["active_repo_path"],
+            value=active_repo,
             help="Enter an absolute or relative path to any local Git repository.",
         )
 
@@ -79,7 +302,7 @@ def main():
                     st.sidebar.error(f"Path does not exist: {repo_input}")
 
         with col_s2:
-            if st.sidebar.button("🔄 Ingest", use_container_width=True):
+            if st.sidebar.button("🔄 Ingest New", use_container_width=True):
                 resolved = str(Path(repo_input).resolve())
                 if Path(resolved).exists():
                     with st.spinner(f"Ingesting {resolved}..."):
@@ -124,13 +347,14 @@ def main():
                 st.sidebar.caption(f"{badge} • ⭐ {chosen_meta.get('stars', 0)}\n\n_{desc[:80]}_")
 
             if st.sidebar.button("🚀 Clone & Switch", type="primary", use_container_width=True):
-                with st.spinner(f"Cloning and ingesting `{selected_gh}` from github.com..."):
+                with st.spinner(f"Cloning and opening `{selected_gh}` from github.com..."):
                     try:
                         cloned_dir, method = clone_github_repo(selected_gh, token=token_input or None)
                         st.session_state["active_repo_path"] = str(cloned_dir)
                         st.cache_resource.clear()
-                        srv = HistorianService(repo_path=str(cloned_dir))
-                        srv.ingest(str(cloned_dir))
+                        if not is_repo_ingested(cloned_dir):
+                            srv = HistorianService(repo_path=str(cloned_dir))
+                            srv.ingest(str(cloned_dir))
                         st.session_state["active_repo_path"] = str(cloned_dir)
                         st.success(f"Loaded `{selected_gh}` successfully via {method}!")
                         st.rerun()
@@ -145,20 +369,19 @@ def main():
         )
         if st.sidebar.button("🚀 Clone & Switch", type="primary", use_container_width=True):
             if gh_url_input.strip():
-                with st.spinner(f"Cloning and ingesting `{gh_url_input}`..."):
+                with st.spinner(f"Cloning and opening `{gh_url_input}`..."):
                     try:
                         cloned_dir, method = clone_github_repo(gh_url_input.strip())
                         st.session_state["active_repo_path"] = str(cloned_dir)
                         st.cache_resource.clear()
-                        srv = HistorianService(repo_path=str(cloned_dir))
-                        srv.ingest(str(cloned_dir))
+                        if not is_repo_ingested(cloned_dir):
+                            srv = HistorianService(repo_path=str(cloned_dir))
+                            srv.ingest(str(cloned_dir))
                         st.success(f"Loaded `{gh_url_input}` successfully via {method}!")
                         st.rerun()
                     except Exception as e:
                         st.sidebar.error(f"Failed to clone: {e}")
 
-    active_repo = st.session_state["active_repo_path"]
-    st.sidebar.caption(f"📍 Active: `{active_repo}`")
     st.sidebar.divider()
 
     service = get_historian_service(active_repo)

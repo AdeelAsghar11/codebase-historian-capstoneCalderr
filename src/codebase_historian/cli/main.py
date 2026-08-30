@@ -209,7 +209,12 @@ def run_mcp(
 
 @app.command(name="dashboard")
 def run_dashboard(
-    repo_path: str = typer.Option(".", "--repo-path", "-r", help="Path to repository to inspect"),
+    repo_path: str | None = typer.Option(
+        None,
+        "--repo-path",
+        "-r",
+        help="Optional path to repository to inspect directly (leave empty to choose inside dashboard)",
+    ),
     port: int = typer.Option(8501, "--port", "-p", help="Port to run Streamlit dashboard on"),
 ):
     """Launch the interactive Streamlit graph-visualization dashboard."""
@@ -219,10 +224,14 @@ def run_dashboard(
     dashboard_path = Path(__file__).parent.parent / "dashboard" / "app.py"
     rprint(f"[bold green]Launching Streamlit Dashboard on port {port}...[/]")
     env = os.environ.copy()
-    if is_github_target(repo_path):
-        env["HISTORIAN_REPO_PATH"] = repo_path
-    else:
-        env["HISTORIAN_REPO_PATH"] = str(Path(repo_path).resolve())
+    if repo_path:
+        if is_github_target(repo_path):
+            env["HISTORIAN_REPO_PATH"] = repo_path
+        else:
+            env["HISTORIAN_REPO_PATH"] = str(Path(repo_path).resolve())
+    elif "HISTORIAN_REPO_PATH" in env:
+        # Clear any stale default so the dashboard opens the repository picker
+        del env["HISTORIAN_REPO_PATH"]
 
     subprocess.run(
         [

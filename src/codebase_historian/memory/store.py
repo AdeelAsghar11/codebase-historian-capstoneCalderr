@@ -208,6 +208,19 @@ class SQLiteMemoryStore:
             last_indexed_at=datetime.fromisoformat(row["last_indexed_at"]),
         )
 
+    def list_all_index_states(self) -> list[IndexState]:
+        """Retrieve all repository indexing states."""
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT * FROM index_state ORDER BY last_indexed_at DESC")
+        return [
+            IndexState(
+                repo_url=row["repo_url"],
+                last_indexed_commit_sha=row["last_indexed_commit_sha"],
+                last_indexed_at=datetime.fromisoformat(row["last_indexed_at"]),
+            )
+            for row in cursor.fetchall()
+        ]
+
     def set_index_state(self, repo_url: str, last_commit_sha: str) -> IndexState:
         """Update or insert repository indexing state."""
         now = datetime.now(UTC)
