@@ -49,6 +49,7 @@ historian.db
 .chroma/
 chroma_db/
 .codebase_graph.json
+.repos/
 
 # IDE / Editor settings
 .vscode/

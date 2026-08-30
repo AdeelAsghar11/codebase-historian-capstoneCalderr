@@ -16,6 +16,7 @@ from codebase_historian.agents.schemas import (
 from codebase_historian.config import settings
 from codebase_historian.graph.builder import KnowledgeGraphBuilder
 from codebase_historian.graph.graph import CodebaseKnowledgeGraph
+from codebase_historian.ingestion.github_resolver import resolve_repo_target
 from codebase_historian.ingestion.pipeline import IngestionPipeline, IngestionResult
 from codebase_historian.memory.store import SQLiteMemoryStore
 from codebase_historian.retrieval.hybrid_index import HybridRetrievalIndex
@@ -30,7 +31,8 @@ class HistorianService:
         db_path: str | None = None,
         chroma_path: str | None = None,
     ):
-        self.repo_path = Path(repo_path).resolve()
+        resolved_path, _ = resolve_repo_target(repo_path)
+        self.repo_path = resolved_path
         self.db_path = db_path or settings.db_path
         self.chroma_path = chroma_path or settings.chroma_db_path
 
@@ -54,12 +56,14 @@ class HistorianService:
 
     def ingest(self, repo_path: str | None = None) -> IngestionResult:
         """Run repository ingestion, populate knowledge graph and hybrid index."""
-        target_path = Path(repo_path).resolve() if repo_path else self.repo_path
+        target_path = resolve_repo_target(repo_path)[0] if repo_path else self.repo_path
+        self.repo_path = target_path
+        self.graph_file = target_path / ".codebase_graph.json"
         pipeline = IngestionPipeline(target_path)
         result = pipeline.run()
 
-        # Populate knowledge graph
-        builder = KnowledgeGraphBuilder(self.knowledge_graph)
+        # Populate fresh knowledge graph to prevent duplicate multi-edges across re-runs
+        builder = KnowledgeGraphBuilder(CodebaseKnowledgeGraph())
         self.knowledge_graph = builder.build_from_ingestion(result)
 
         # Save graph for persistence

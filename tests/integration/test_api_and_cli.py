@@ -132,3 +132,10 @@ def test_cli_commands():
     assert "Refactoring Proposal" in r_refactor.output
     assert "Critic Adversarial Review" in r_refactor.output
     assert "Human approval granted" in r_refactor.output
+
+    # 6. GitHub Integration Commands Help
+    r_gh = runner.invoke(cli_app, ["github", "--help"])
+    assert r_gh.exit_code == 0
+    assert "GitHub online integration" in r_gh.output
+    assert "list" in r_gh.output
+    assert "clone" in r_gh.output

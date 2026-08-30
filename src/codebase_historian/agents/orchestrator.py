@@ -4,6 +4,7 @@ Assembles Supervisor router, specialist agents (Historian, Impact, Onboarding),
 and the adversarial Refactor Proposer <-> Critic debate loop under a mandatory human gate.
 """
 
+import os
 from typing import Any
 
 from langgraph.graph import END, START, StateGraph
@@ -18,6 +19,7 @@ from codebase_historian.agents.refactor import (
 )
 from codebase_historian.agents.state import AgentState
 from codebase_historian.agents.supervisor import SupervisorAgent
+from codebase_historian.config import settings
 from codebase_historian.graph.graph import CodebaseKnowledgeGraph
 from codebase_historian.memory.store import SQLiteMemoryStore
 from codebase_historian.retrieval.hybrid_index import HybridRetrievalIndex
@@ -60,6 +62,16 @@ class HistorianOrchestrator:
         self.kg = knowledge_graph
         self.index = retrieval_index
         self.memory = memory_store
+
+        if llm is None:
+            groq_key = os.environ.get("GROQ_API_KEY") or settings.groq_api_key
+            if groq_key and groq_key.strip():
+                try:
+                    from langchain_groq import ChatGroq
+
+                    llm = ChatGroq(model_name=settings.llm_model, api_key=groq_key.strip())
+                except Exception:
+                    pass
         self.llm = llm
 
         # Initialize agents

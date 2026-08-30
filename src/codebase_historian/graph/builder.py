@@ -78,11 +78,15 @@ class KnowledgeGraphBuilder:
             )
 
             # Add AUTHORED_BY edge
-            self.kg.g.add_edge(
-                c_id,
-                a_id,
-                type=EdgeType.AUTHORED_BY.value,
-            )
+            if not any(
+                d.get("type") == EdgeType.AUTHORED_BY.value
+                for _, _, d in self.kg.g.edges(c_id, data=True)
+            ):
+                self.kg.g.add_edge(
+                    c_id,
+                    a_id,
+                    type=EdgeType.AUTHORED_BY.value,
+                )
 
             # Process file modifications
             for mod in commit.modifications:
@@ -102,16 +106,20 @@ class KnowledgeGraphBuilder:
                     # Update last modified commit
                     self.kg.g.nodes[f_id]["last_modified_commit"] = commit.sha
 
-                # Add MODIFIES edge (Commit -> File)
-                self.kg.g.add_edge(
-                    c_id,
-                    f_id,
-                    type=EdgeType.MODIFIES.value,
-                    change_type=mod.change_type,
-                    lines_added=mod.lines_added,
-                    lines_removed=mod.lines_removed,
-                    diff_summary=mod.diff_summary or "",
-                )
+                # Add MODIFIES edge (Commit -> File) if not already added
+                if not any(
+                    v == f_id and d.get("type") == EdgeType.MODIFIES.value
+                    for _, v, d in self.kg.g.edges(c_id, data=True)
+                ):
+                    self.kg.g.add_edge(
+                        c_id,
+                        f_id,
+                        type=EdgeType.MODIFIES.value,
+                        change_type=mod.change_type,
+                        lines_added=mod.lines_added,
+                        lines_removed=mod.lines_removed,
+                        diff_summary=mod.diff_summary or "",
+                    )
 
     def add_co_changes(self, co_changes: list[CoChangeRecord]) -> None:
         """Add bidirectional CO_CHANGES_WITH edges between files."""
@@ -132,14 +140,34 @@ class KnowledgeGraphBuilder:
                         centrality=0.0,
                     )
 
-            # Add bidirectional edges for easy neighbor traversal
+            # Add or update bidirectional edges without duplicate multi-edges
             edge_attrs = {
                 "type": EdgeType.CO_CHANGES_WITH.value,
                 "co_change_count": cc.co_change_count,
                 "last_co_change_commit": cc.last_co_change_commit,
             }
-            self.kg.g.add_edge(f1_id, f2_id, **edge_attrs)
-            self.kg.g.add_edge(f2_id, f1_id, **edge_attrs)
+
+            existing_f1_f2 = False
+            if self.kg.g.has_edge(f1_id, f2_id):
+                for _, d in self.kg.g.get_edge_data(f1_id, f2_id).items():
+                    if d.get("type") == EdgeType.CO_CHANGES_WITH.value:
+                        d["co_change_count"] = max(d.get("co_change_count", 0), cc.co_change_count)
+                        d["last_co_change_commit"] = cc.last_co_change_commit
+                        existing_f1_f2 = True
+                        break
+            if not existing_f1_f2:
+                self.kg.g.add_edge(f1_id, f2_id, **edge_attrs)
+
+            existing_f2_f1 = False
+            if self.kg.g.has_edge(f2_id, f1_id):
+                for _, d in self.kg.g.get_edge_data(f2_id, f1_id).items():
+                    if d.get("type") == EdgeType.CO_CHANGES_WITH.value:
+                        d["co_change_count"] = max(d.get("co_change_count", 0), cc.co_change_count)
+                        d["last_co_change_commit"] = cc.last_co_change_commit
+                        existing_f2_f1 = True
+                        break
+            if not existing_f2_f1:
+                self.kg.g.add_edge(f2_id, f1_id, **edge_attrs)
 
     def add_file_structures(self, structures: list[FileStructureRecord]) -> None:
         """Ensure File nodes exist for all parsed source files and attach metadata."""
@@ -178,12 +206,16 @@ class KnowledgeGraphBuilder:
                         centrality=0.0,
                     )
 
-            self.kg.g.add_edge(
-                s_id,
-                t_id,
-                type=EdgeType.DEPENDS_ON.value,
-                import_kind=kind,
-            )
+            if not any(
+                v == t_id and d.get("type") == EdgeType.DEPENDS_ON.value
+                for _, v, d in self.kg.g.edges(s_id, data=True)
+            ):
+                self.kg.g.add_edge(
+                    s_id,
+                    t_id,
+                    type=EdgeType.DEPENDS_ON.value,
+                    import_kind=kind,
+                )
 
     def add_pull_request(
         self,

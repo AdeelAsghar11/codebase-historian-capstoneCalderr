@@ -3,6 +3,8 @@ Typer and Rich CLI for Codebase Historian.
 """
 
 
+import os
+import unicodedata
 from pathlib import Path
 
 import typer
@@ -11,6 +13,11 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from codebase_historian.ingestion.github_resolver import (
+    clone_github_repo,
+    is_github_target,
+    list_github_user_repos,
+)
 from codebase_historian.service import HistorianService
 
 app = typer.Typer(
@@ -21,41 +28,60 @@ app = typer.Typer(
 console = Console()
 
 
-def get_cli_service() -> HistorianService:
-    return HistorianService()
+def safe_console_str(text: str) -> str:
+    """Sanitize strings so they never crash cp1252 or legacy Windows terminals."""
+    if not text:
+        return ""
+    replacements = {
+        "\u2011": "-",
+        "\u2012": "-",
+        "\u2013": "-",
+        "\u2014": "--",
+        "\u2018": "'",
+        "\u2019": "'",
+        "\u201c": '"',
+        "\u201d": '"',
+        "\u2026": "...",
+        "\u2022": "*",
+        "\u202f": " ",
+        "\u00a0": " ",
+        "\u200b": "",
+    }
+    for old, new in replacements.items():
+        text = text.replace(old, new)
+    return unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode("ascii")
+
+
+def get_cli_service(repo_path: str = ".") -> HistorianService:
+    return HistorianService(repo_path=repo_path)
 
 
 @app.command(name="ingest")
 def ingest(
-    repo_path: str = typer.Argument(".", help="Path to repository to ingest (defaults to current directory)"),
+    repo_path: str = typer.Option(".", "--repo-path", "-r", help="Path or GitHub repo to ingest"),
 ):
-    """Ingest git history, PR/issue data, and source AST into knowledge graph and index."""
-    service = get_cli_service()
-    with console.status("[bold green]Ingesting repository history and AST structure..."):
-        result = service.ingest(repo_path)
+    """Ingest git commits, PRs/issues, and parse AST into the knowledge graph."""
+    service = get_cli_service(repo_path)
+    with console.status(f"[bold green]Ingesting repository at '{repo_path}'..."):
+        res = service.ingest(repo_path)
 
-    table = Table(title="Ingestion Summary", border_style="green")
-    table.add_column("Metric", style="cyan", no_wrap=True)
-    table.add_column("Value", style="magenta")
-
-    table.add_row("Repository Path", result.repo_path)
-    table.add_row("Last Indexed Commit", (result.last_indexed_commit_sha or "")[:8])
-    for k, v in result.stats.items():
-        table.add_row(k.replace("_", " ").title(), str(v))
-
-    console.print(table)
+    rprint(
+        f"[bold green]Ingestion complete![/] Processed [cyan]{res.commits_ingested}[/] commits, "
+        f"[cyan]{res.prs_ingested}[/] PRs, [cyan]{res.files_parsed}[/] files, and generated [cyan]{res.chunks_indexed}[/] index chunks."
+    )
 
 
 @app.command(name="explain")
 def explain(
-    target: str = typer.Argument(..., help="File path or symbol qualname to explain"),
+    target: str = typer.Argument(..., help="File path or symbol name to explain"),
+    repo_path: str = typer.Option(".", "--repo-path", "-r", help="Path to repository"),
 ):
     """Explain why a file or symbol exists, citing commits, PRs, and discussions."""
-    service = get_cli_service()
+    service = get_cli_service(repo_path)
     with console.status(f"[bold cyan]Querying historian agent for '{target}'..."):
         res = service.explain(target)
 
-    console.print(Panel(res.answer, title=f"Historian Explanation: {target}", border_style="cyan"))
+    console.print(Panel(safe_console_str(res.answer), title=f"Historian Explanation: {target}", border_style="cyan"))
 
     if res.citations:
         table = Table(title="Citations & Grounding Evidence", border_style="dim")
@@ -63,7 +89,7 @@ def explain(
         table.add_column("Excerpt", style="white")
         for c in res.citations:
             ref = f"Commit {c.commit_sha[:8]}" if c.commit_sha else (f"PR #{c.pr_number}" if c.pr_number else "Reference")
-            table.add_row(ref, c.excerpt)
+            table.add_row(ref, safe_console_str(c.excerpt))
         console.print(table)
 
     rprint(f"[bold green]Confidence score:[/] {res.confidence * 100:.1f}%")
@@ -72,9 +98,10 @@ def explain(
 @app.command(name="impact")
 def impact(
     change_description: str = typer.Argument(..., help="Diff or description of intended change"),
+    repo_path: str = typer.Option(".", "--repo-path", "-r", help="Path to repository to inspect"),
 ):
     """Predict blast radius and affected files for a proposed change."""
-    service = get_cli_service()
+    service = get_cli_service(repo_path)
     with console.status("[bold yellow]Walking co-change and AST dependency graphs..."):
         res = service.impact(change_description)
 
@@ -96,9 +123,10 @@ def impact(
 @app.command(name="refactor")
 def refactor(
     target: str = typer.Argument(..., help="File path or symbol to propose refactor for"),
+    repo_path: str = typer.Option(".", "--repo-path", "-r", help="Path to repository to inspect"),
 ):
     """Propose refactor under adversarial Critic review and mandatory human review gate."""
-    service = get_cli_service()
+    service = get_cli_service(repo_path)
     with console.status(f"[bold magenta]Running Proposer <-> Critic debate for '{target}'..."):
         res = service.suggest_refactor(target)
 
@@ -124,9 +152,11 @@ def refactor(
 
 
 @app.command(name="onboard")
-def onboard():
+def onboard(
+    repo_path: str = typer.Option(".", "--repo-path", "-r", help="Path to repository to inspect"),
+):
     """Generate contributor onboarding guide with central files and reading order."""
-    service = get_cli_service()
+    service = get_cli_service(repo_path)
     with console.status("[bold blue]Generating onboarding guide..."):
         guide = service.onboarding_guide()
 
@@ -145,9 +175,11 @@ def onboard():
 
 
 @app.command(name="health")
-def health():
+def health(
+    repo_path: str = typer.Option(".", "--repo-path", "-r", help="Path to repository to inspect"),
+):
     """Display system status, graph node/edge counts, and index freshness."""
-    service = get_cli_service()
+    service = get_cli_service(repo_path)
     data = service.health()
 
     table = Table(title="System Health & Index Status", border_style="green")
@@ -177,6 +209,7 @@ def run_mcp(
 
 @app.command(name="dashboard")
 def run_dashboard(
+    repo_path: str = typer.Option(".", "--repo-path", "-r", help="Path to repository to inspect"),
     port: int = typer.Option(8501, "--port", "-p", help="Port to run Streamlit dashboard on"),
 ):
     """Launch the interactive Streamlit graph-visualization dashboard."""
@@ -185,6 +218,12 @@ def run_dashboard(
 
     dashboard_path = Path(__file__).parent.parent / "dashboard" / "app.py"
     rprint(f"[bold green]Launching Streamlit Dashboard on port {port}...[/]")
+    env = os.environ.copy()
+    if is_github_target(repo_path):
+        env["HISTORIAN_REPO_PATH"] = repo_path
+    else:
+        env["HISTORIAN_REPO_PATH"] = str(Path(repo_path).resolve())
+
     subprocess.run(
         [
             sys.executable,
@@ -195,8 +234,57 @@ def run_dashboard(
             "--server.port",
             str(port),
         ],
+        env=env,
         check=False,
     )
+
+
+# --- GitHub Online CLI Subcommands ---
+github_app = typer.Typer(
+    name="github",
+    help="GitHub online integration: list user repositories, clone, and switch.",
+)
+app.add_typer(github_app, name="github")
+
+
+@github_app.command(name="list")
+def github_list(
+    token: str = typer.Option(None, "--token", "-t", help="GitHub Personal Access Token"),
+    username: str = typer.Option(None, "--username", "-u", help="GitHub username to inspect"),
+    limit: int = typer.Option(30, "--limit", "-l", help="Max repositories to list"),
+):
+    """List accessible repositories from github.com (uses GitHub CLI auth, GITHUB_TOKEN, or username)."""
+    with console.status("[bold cyan]Fetching repositories from github.com..."):
+        repos = list_github_user_repos(token=token, username=username, limit=limit)
+
+    if not repos:
+        rprint("[yellow]No repositories found. Ensure you are logged into GitHub CLI (`gh auth login`) or provide `--token` / `--username`.[/]")
+        return
+
+    table = Table(title="GitHub Online Repositories", border_style="cyan")
+    table.add_column("#", style="dim", width=4)
+    table.add_column("Repository (owner/name)", style="green")
+    table.add_column("Visibility", style="magenta")
+    table.add_column("Description", style="white")
+
+    for idx, r in enumerate(repos, 1):
+        vis = "🔒 Private" if r.get("private") else "🌍 Public"
+        table.add_row(str(idx), r["full_name"], vis, (r.get("description") or "No description")[:60])
+
+    console.print(table)
+
+
+@github_app.command(name="clone")
+def github_clone(
+    target: str = typer.Argument(..., help="GitHub repository URL or 'owner/repo' shorthand"),
+    dest: str = typer.Option(None, "--dest", "-d", help="Custom destination directory"),
+):
+    """Clone a GitHub repository into local repository cache using GitHub CLI or Git."""
+    with console.status(f"[bold green]Cloning GitHub repository '{target}'..."):
+        path, method = clone_github_repo(target, dest_dir=dest)
+
+    rprint(f"[bold green]Successfully cloned[/] [cyan]{target}[/] to [yellow]{path}[/] (via {method}).")
+    rprint(f"To inspect: [bold cyan]historian dashboard -r {path}[/]")
 
 
 if __name__ == "__main__":

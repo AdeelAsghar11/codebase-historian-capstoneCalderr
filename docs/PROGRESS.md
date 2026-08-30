@@ -146,20 +146,26 @@ Entry template:
 **Built:** Constructed realistic multi-commit external repository fixture (`micro_task_router`) with independent Git history and AST dependency graphs. Formulated ground truth evaluation set `tests/eval/external_eval_set.json`. Ran full faithfulness evaluation suite against unseen code in `tests/eval/test_external_repo_eval.py`, achieving **100.0% Faithfulness** (exceeding >= 80% PRD.md target). Validated out-of-the-box generalization for Impact blast-radius prediction and Onboarding reading order ranking. All 48 tests passing across the entire test suite.
 **Files touched:** `tests/eval/external_eval_set.json`, `tests/eval/test_external_repo_eval.py`, `docs/ROADMAP.md`, `docs/PROGRESS.md`.
 **Decisions made:** None (aligned with TESTING.md, PRD.md, and CONVENTIONS.md).
+---
+
+### 2026-08-30 — Dashboard responsiveness fix, edge deduplication, and dynamic repository switcher
+**Built:** Diagnosed and resolved browser freeze in Streamlit dashboard. Idempotently guarded `KnowledgeGraphBuilder` (`MODIFIES`, `AUTHORED_BY`, `DEPENDS_ON`, and `CO_CHANGES_WITH`) and reset clean graph on full `service.ingest()` runs to eliminate multi-edge accumulation (shrinking `.codebase_graph.json` from 61.6 MB with 217k edges down to 964 KB with 3,229 edges). Optimized `generate_graph_html` in `graph_view.py` with visual edge deduplication, priority sorting, edge capping (`max_edges`), edge filtering, and automatic vis.js physics freeze upon stabilization (`network.setOptions({ physics: false })`), reducing CPU load to 0% and ensuring smooth interactive exploration. Added dynamic repository switching support: an interactive sidebar repository switcher with Load and Re-index controls in the Streamlit dashboard, plus `--repo-path` options across all CLI commands (`explain`, `impact`, `refactor`, `onboard`, `health`, `dashboard`). All 48 tests passing, lint clean.
+**Files touched:** `src/codebase_historian/cli/main.py`, `src/codebase_historian/dashboard/app.py`, `src/codebase_historian/dashboard/graph_view.py`, `src/codebase_historian/graph/builder.py`, `src/codebase_historian/service.py`, `docs/PROGRESS.md`.
+**Decisions made:** Freeze vis.js physics engine once layout stabilization iterations complete to prevent high CPU utilization and browser lockup; cache HistorianService per repository path in Streamlit resource cache.
 **Next:** Phase 3 milestone 5 (`ROADMAP.md`) — Recorded end-to-end demonstration.
 
+---
 
+### 2026-08-30 — GitHub online repository selection, user repository listing, and CLI integration
+**Built:** Implemented remote GitHub online repository integration in `src/codebase_historian/ingestion/github_resolver.py`. Supports listing repositories from `github.com` via PyGithub (with auto-detected GitHub CLI `gh auth token`, `GITHUB_TOKEN`, or username), cloning/caching to `.repos/<owner>_<repo>` using GitHub CLI (`gh repo clone`) with GitPython fallback. Added dedicated CLI command group (`historian github list` and `historian github clone`) and enabled transparent GitHub URL and `owner/repo` target resolution across all commands. Added a 3-mode repository switcher in the Streamlit sidebar (`Local Folder`, `GitHub Online (My Repos)` with live user repo dropdown and metadata badges, and `GitHub URL/Shorthand`). Covered with 6 unit tests in `tests/unit/test_github_resolver.py` and CLI integration tests (54/54 tests passing, lint clean).
+**Files touched:** `.gitignore`, `src/codebase_historian/ingestion/github_resolver.py`, `src/codebase_historian/ingestion/__init__.py`, `src/codebase_historian/service.py`, `src/codebase_historian/cli/main.py`, `src/codebase_historian/dashboard/app.py`, `tests/unit/test_github_resolver.py`, `tests/integration/test_api_and_cli.py`, `docs/PROGRESS.md`.
+**Decisions made:** Use GitHub CLI (`gh`) when present for authenticated private repo access, with GitPython HTTPS as universal fallback; cache remote clones under `.repos/`.
+**Next:** Phase 3 milestone 5 (`ROADMAP.md`) — Recorded end-to-end demonstration.
 
+---
 
-
-
-
-
-
-
-
-
-
-
-
-
+### 2026-08-30 — Rich plain-English explanation synthesis with AST awareness and Windows encoding safety
+**Built:** Upgraded `HistorianAgent` in `src/codebase_historian/agents/historian.py` from producing raw commit message quotes to generating rich, developer-friendly plain-English explanations. Synthesizes a 3-part structured breakdown: (1) **Plain-English Overview & Purpose** (extracting and formatting module docstrings/AST purpose), (2) **Architecture & Component Role** (classes, functions, upstream dependencies, and downstream consumers from the Knowledge Graph), and (3) **Historical Rationale & Evolution** (origination commit, author, latest evolution with diff stats, and historical co-changes). Added automatic LLM synthesis via ChatGroq when `GROQ_API_KEY` is present with deterministic fallback. Fixed Windows `cp1252` encoding compatibility by replacing emoji headers with clean ASCII markdown. Evaluated against full faithfulness suite (100% faithfulness maintained, all tests passing).
+**Files touched:** `src/codebase_historian/agents/historian.py`, `docs/PROGRESS.md`.
+**Decisions made:** Invalidate legacy uninformative memory cache entries on the fly if they lack modern "Overview" content; sanitize console output for Windows cp1252 terminals.
+**Next:** Phase 3 milestone 5 (`ROADMAP.md`) — Recorded end-to-end demonstration.

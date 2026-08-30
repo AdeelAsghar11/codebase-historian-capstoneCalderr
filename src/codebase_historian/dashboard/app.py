@@ -5,11 +5,20 @@ Blast Radius prediction, Refactor Proposer <-> Critic debate under human gate,
 Contributor Onboarding guides, and SQLite structured audit logs.
 """
 
+import os
+from pathlib import Path
+
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 
 from codebase_historian.dashboard.graph_view import generate_graph_html
+from codebase_historian.ingestion.github_resolver import (
+    clone_github_repo,
+    get_active_github_token,
+    is_github_target,
+    list_github_user_repos,
+)
 from codebase_historian.service import HistorianService
 
 st.set_page_config(
@@ -21,22 +30,143 @@ st.set_page_config(
 
 
 @st.cache_resource
-def get_historian_service() -> HistorianService:
-    """Initialize and cache the core HistorianService."""
-    service = HistorianService()
-    # Ingest local repo if graph is empty
-    if service.knowledge_graph.total_nodes() == 0:
-        service.ingest(".")
+def get_historian_service(repo_path: str = ".") -> HistorianService:
+    """Initialize and cache the core HistorianService for the specified repository."""
+    if is_github_target(repo_path):
+        clean_path, _ = clone_github_repo(repo_path)
+        clean_path = str(clean_path)
+    else:
+        clean_path = str(Path(repo_path).resolve())
+
+    service = HistorianService(repo_path=clean_path)
+    # Ingest repo if graph is empty
+    if service.knowledge_graph.g.number_of_nodes() == 0:
+        service.ingest(clean_path)
     return service
 
 
 def main():
-    service = get_historian_service()
+    # --- Determine active repository ---
+    default_repo = os.environ.get("HISTORIAN_REPO_PATH", ".")
+    if "active_repo_path" not in st.session_state:
+        st.session_state["active_repo_path"] = str(Path(default_repo).resolve())
+
+    # --- Sidebar: Active Repository Switcher ---
+    st.sidebar.image("https://img.shields.io/badge/Codebase-Historian-blue?style=for-the-badge&logo=git", use_container_width=True)
+    st.sidebar.markdown("### 📁 Select Repository")
+
+    repo_source = st.sidebar.radio(
+        "Choose repository source:",
+        ["📁 Local Folder", "🐙 GitHub Online (My Repos)", "🌐 GitHub (URL / Shorthand)"],
+        index=0,
+    )
+
+    if repo_source == "📁 Local Folder":
+        repo_input = st.sidebar.text_input(
+            "Local repository path:",
+            value=st.session_state["active_repo_path"],
+            help="Enter an absolute or relative path to any local Git repository.",
+        )
+
+        col_s1, col_s2 = st.sidebar.columns(2)
+        with col_s1:
+            if st.sidebar.button("📂 Switch", use_container_width=True):
+                resolved = str(Path(repo_input).resolve())
+                if Path(resolved).exists():
+                    st.session_state["active_repo_path"] = resolved
+                    st.rerun()
+                else:
+                    st.sidebar.error(f"Path does not exist: {repo_input}")
+
+        with col_s2:
+            if st.sidebar.button("🔄 Ingest", use_container_width=True):
+                resolved = str(Path(repo_input).resolve())
+                if Path(resolved).exists():
+                    with st.spinner(f"Ingesting {resolved}..."):
+                        srv = HistorianService(repo_path=resolved)
+                        srv.ingest(resolved)
+                        st.session_state["active_repo_path"] = resolved
+                        st.cache_resource.clear()
+                        st.rerun()
+                else:
+                    st.sidebar.error(f"Path does not exist: {repo_input}")
+
+    elif repo_source == "🐙 GitHub Online (My Repos)":
+        detected_token = get_active_github_token()
+        token_input = st.sidebar.text_input(
+            "GitHub Token (PAT):",
+            value=detected_token or "",
+            type="password",
+            help="Auto-detected from GitHub CLI (`gh auth token`) or GITHUB_TOKEN environment variable. You can also paste a Personal Access Token.",
+        )
+        username_opt = st.sidebar.text_input(
+            "Or GitHub Username:",
+            placeholder="e.g. AdeelAsghar11",
+            help="Enter your GitHub username to fetch your public repositories if token is not configured.",
+        )
+
+        if st.sidebar.button("🔍 Fetch My Repositories", use_container_width=True):
+            with st.spinner("Fetching repositories from github.com..."):
+                repos = list_github_user_repos(token=token_input or None, username=username_opt or None, limit=60)
+                if repos:
+                    st.session_state["gh_repos_list"] = repos
+                    st.sidebar.success(f"Found {len(repos)} repositories!")
+                else:
+                    st.sidebar.warning("No repositories found. Check token or username.")
+
+        if st.session_state.get("gh_repos_list"):
+            repo_options = [r["full_name"] for r in st.session_state["gh_repos_list"]]
+            selected_gh = st.sidebar.selectbox("Select repository from your account:", repo_options)
+            chosen_meta = next((r for r in st.session_state["gh_repos_list"] if r["full_name"] == selected_gh), None)
+            if chosen_meta:
+                badge = "🔒 Private" if chosen_meta.get("private") else "🌍 Public"
+                desc = chosen_meta.get("description") or "No description"
+                st.sidebar.caption(f"{badge} • ⭐ {chosen_meta.get('stars', 0)}\n\n_{desc[:80]}_")
+
+            if st.sidebar.button("🚀 Clone & Switch", type="primary", use_container_width=True):
+                with st.spinner(f"Cloning and ingesting `{selected_gh}` from github.com..."):
+                    try:
+                        cloned_dir, method = clone_github_repo(selected_gh, token=token_input or None)
+                        st.session_state["active_repo_path"] = str(cloned_dir)
+                        st.cache_resource.clear()
+                        srv = HistorianService(repo_path=str(cloned_dir))
+                        srv.ingest(str(cloned_dir))
+                        st.session_state["active_repo_path"] = str(cloned_dir)
+                        st.success(f"Loaded `{selected_gh}` successfully via {method}!")
+                        st.rerun()
+                    except Exception as e:
+                        st.sidebar.error(f"Failed to clone: {e}")
+
+    elif repo_source == "🌐 GitHub (URL / Shorthand)":
+        gh_url_input = st.sidebar.text_input(
+            "GitHub URL or owner/repo:",
+            placeholder="e.g. pallets/flask or https://github.com/...",
+            help="Enter any public GitHub repository URL or shorthand.",
+        )
+        if st.sidebar.button("🚀 Clone & Switch", type="primary", use_container_width=True):
+            if gh_url_input.strip():
+                with st.spinner(f"Cloning and ingesting `{gh_url_input}`..."):
+                    try:
+                        cloned_dir, method = clone_github_repo(gh_url_input.strip())
+                        st.session_state["active_repo_path"] = str(cloned_dir)
+                        st.cache_resource.clear()
+                        srv = HistorianService(repo_path=str(cloned_dir))
+                        srv.ingest(str(cloned_dir))
+                        st.success(f"Loaded `{gh_url_input}` successfully via {method}!")
+                        st.rerun()
+                    except Exception as e:
+                        st.sidebar.error(f"Failed to clone: {e}")
+
+    active_repo = st.session_state["active_repo_path"]
+    st.sidebar.caption(f"📍 Active: `{active_repo}`")
+    st.sidebar.divider()
+
+    service = get_historian_service(active_repo)
     health = service.health()
 
     # --- Top Banner & Metrics ---
     st.title("📜 Codebase Historian")
-    st.caption("Multi-Agent GraphRAG Platform for Codebase Intelligence & Architectural Reasoning")
+    st.caption(f"Multi-Agent GraphRAG Platform for Codebase Intelligence — Repository: `{active_repo}`")
 
     col1, col2, col3, col4 = st.columns(4)
     with col1:
@@ -52,7 +182,6 @@ def main():
     st.divider()
 
     # --- Sidebar Navigation ---
-    st.sidebar.image("https://img.shields.io/badge/Codebase-Historian-blue?style=for-the-badge&logo=git", use_container_width=True)
     st.sidebar.title("Navigation")
     page = st.sidebar.radio(
         "Select Workspace View:",
@@ -94,10 +223,21 @@ def main():
             st.markdown("- 🟢 `DEPENDS_ON`")
             st.markdown("- 🟡 `AUTHORED_BY`")
 
-            max_nodes = st.slider("Max Nodes to Render", 20, 250, 100)
+            max_nodes = st.slider("Max Nodes to Render", 10, 150, 60)
+            max_edges = st.slider("Max Edges to Render", 10, 250, 100)
+            edge_types = st.multiselect(
+                "Filter Edge Types:",
+                ["CO_CHANGES_WITH", "DEPENDS_ON", "AUTHORED_BY", "MODIFIES"],
+                default=["CO_CHANGES_WITH", "DEPENDS_ON", "AUTHORED_BY"],
+            )
 
         with col_opts1:
-            html_content = generate_graph_html(service.knowledge_graph, max_nodes=max_nodes)
+            html_content = generate_graph_html(
+                service.knowledge_graph,
+                max_nodes=max_nodes,
+                max_edges=max_edges,
+                edge_types=edge_types,
+            )
             components.html(html_content, height=540)
 
         # Centrality table
